@@ -453,16 +453,17 @@ static void report_super_layout(const char *dev)
 		if ((i == 0 && magic == LP_GEO_MAGIC) ||
 		    (i == 1 && magic == LP_HDR_MAGIC)) {
 			lp = 1;
-			both_fmt("VXTUX-SUPER: %s LP magic 0x%08x @%lld -> "
+			both_fmt("VXTUX-SUPER: %s LP magic 0x%08x at %lld -> "
 				 "Android dynamic partitions\n",
 				 dev, magic, (long long)off);
 		}
 	}
 	if (lp) {
-		both("VXTUX-SUPER: tidak ada filesystem di awal super; butuh "
-		     "dm-linear dari metadata LP\n"
-		     "VXTUX-SUPER: (liblp/fs_mgr atau 'parse-android-dynparts' "
-		     "di PC). Kernel ini belum memetakannya.\n");
+		both("VXTUX-SUPER: no filesystem at the start of super; the rootfs "
+		     "is inside an LP logical partition\n"
+		     "VXTUX-SUPER: needs dm-linear built from the LP metadata "
+		     "(liblp/fs_mgr, or 'parse-android-dynparts' on the PC)\n"
+		     "VXTUX-SUPER: this kernel does not map it yet\n");
 		close(fd);
 		return;
 	}
@@ -471,8 +472,8 @@ static void report_super_layout(const char *dev)
 	    b[0] == 0x53 && b[1] == 0xEF) {
 		if (pread(fd, label, sizeof label - 1, 1024 + 0x78) < 0)
 			label[0] = 0;
-		both_fmt("VXTUX-SUPER: %s berisi ext4 langsung, label \"%s\" "
-			 "-> mount(2) biasa\n", dev, label);
+		both_fmt("VXTUX-SUPER: %s holds ext4 directly, label \"%s\" "
+			 "-> plain mount(2)\n", dev, label);
 	}
 	close(fd);
 }
