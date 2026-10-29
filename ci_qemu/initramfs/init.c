@@ -415,6 +415,68 @@ static int is_ext4(const char *dev)
 	return sb[0] == 0x53 && sb[1] == 0xEF;
 }
 
+/*
+ * Partisi "super" bisa berisi dua hal yang sangat berbeda:
+ *
+ *   a) ext4 langsung  -> mount(2) biasa, ini yang dipakai tablet ini;
+ *   b) container LP Android (dynamic partitions) -> TIDAK ada filesystem di
+ *      awal partisi.  Yang ada: geometry di offset 4096 (magic 0x616c4467)
+ *      dan header metadata di offset 8192 (magic 0x414c5030), lalu tabel
+ *      extent yang memetakan nama logis (system_a, vendor_a, product_a, ...)
+ *      ke rentang sektor di dalam super.  Untuk membaca isinya, tiap
+ *      partisi logis harus dibuat dulu sebagai perangkat device-mapper
+ *      (target "linear") -- itulah cara Android sendiri melakukannya
+ *      (liblp + dm-linear), dan itu sebabnya mount ext4 langsung gagal.
+ *
+ * Fungsi ini hanya MEMBACA 16 KiB pertama dan melaporkan mana yang ada,
+ * supaya dump berikutnya menjawab "kenapa root tidak ketemu" tanpa menebak.
+ * Tidak ada penulisan, tidak ada dm, aman dijalankan di mana saja.
+ */
+#define LP_GEO_MAGIC	0x616c4467U	/* "gDla", offset 4096 */
+#define LP_HDR_MAGIC	0x414c5030U	/* "0PLA", offset 8192 */
+
+static void report_super_layout(const char *dev)
+{
+	unsigned char b[2];
+	char label[17];
+	unsigned int magic;
+	int fd = open(dev, O_RDONLY | O_CLOEXEC);
+	int i, lp = 0;
+
+	if (fd < 0)
+		return;
+	for (i = 0; i < 2; i++) {
+		off_t off = i ? 8192 : 4096;
+
+		if (pread(fd, &magic, sizeof magic, off) != sizeof magic)
+			continue;
+		if ((i == 0 && magic == LP_GEO_MAGIC) ||
+		    (i == 1 && magic == LP_HDR_MAGIC)) {
+			lp = 1;
+			both_fmt("VXTUX-SUPER: %s LP magic 0x%08x @%lld -> "
+				 "Android dynamic partitions\n",
+				 dev, magic, (long long)off);
+		}
+	}
+	if (lp) {
+		both("VXTUX-SUPER: tidak ada filesystem di awal super; butuh "
+		     "dm-linear dari metadata LP\n"
+		     "VXTUX-SUPER: (liblp/fs_mgr atau 'parse-android-dynparts' "
+		     "di PC). Kernel ini belum memetakannya.\n");
+		close(fd);
+		return;
+	}
+	memset(label, 0, sizeof label);
+	if (pread(fd, b, sizeof b, 1024 + 0x38) == sizeof b &&
+	    b[0] == 0x53 && b[1] == 0xEF) {
+		if (pread(fd, label, sizeof label - 1, 1024 + 0x78) < 0)
+			label[0] = 0;
+		both_fmt("VXTUX-SUPER: %s berisi ext4 langsung, label \"%s\" "
+			 "-> mount(2) biasa\n", dev, label);
+	}
+	close(fd);
+}
+
 /* Read the GPT partition name from sysfs uevent when the kernel exposes it. */
 static int get_partname(const char *devname, char *name, size_t name_len)
 {
@@ -1255,6 +1317,10 @@ static int find_and_mount_root(const struct part *parts, int np, char *rootdev,
 		if (!named && parts[i].blocks < 1024 * 1024)
 			continue;
 		snprintf(dev, sizeof dev, "/dev/%s", parts[i].name);
+		/* super punya dua kemungkinan isi yang sangat berbeda (lihat
+		 * report_super_layout): laporkan mana yang ada sebelum mount. */
+		if (named && strcmp(partname, "super") == 0)
+			report_super_layout(dev);
 		probe = is_ext4(dev);
 		if (probe < 0) {
 			rep_fmt("  %s (%s): ext4 probe I/O failed: %s\n",
