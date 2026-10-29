@@ -32,6 +32,17 @@ struct vxtux_panel {
 	struct regulator *vcc;
 	struct regulator *iovcc;
 	bool prepared;
+	/*
+	 * Panel already brought up by the bootloader LK (see "[sprdfb]" lines in
+	 * the tablet's uboot_log: mipi_dsi_init, dphy, panel probe, backlight).
+	 *
+	 * When the DT node carries `vxtux,panel-bootloader-initialized`, prepare()
+	 * must NOT toggle the reset pin: this HX83102E has no vendor init sequence
+	 * in the kernel tree yet (all of it still lives in LK), so a reset here
+	 * only switches the panel off with nothing to switch it back on -> the
+	 * screen stays dark even though KMS is up.
+	 */
+	bool skip_reset;
 };
 
 static inline struct vxtux_panel *panel_to_vxtux(struct drm_panel *panel)
@@ -85,13 +96,16 @@ static int vxtux_panel_prepare(struct drm_panel *panel)
 
 	msleep(20);
 
-	if (ctx->reset_gpio) {
+	if (ctx->reset_gpio && !ctx->skip_reset) {
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		usleep_range(10000, 11000);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 		usleep_range(10000, 11000);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		msleep(120);
+	} else if (ctx->reset_gpio) {
+		dev_info(ctx->dev,
+			 "reset-gpios skipped: keeping panel state left by LK init\n");
 	}
 
 	ctx->prepared = true;
@@ -163,6 +177,14 @@ static int vxtux_panel_probe(struct mipi_dsi_device *dsi)
 		return PTR_ERR(ctx);
 
 	ctx->dev = dev;
+
+	/*
+	 * Panel init belongs to LK ("[sprdfb]..." in uboot_log): the kernel has
+	 * no vendor sequence, so keep the already-running panel as it is.  Without
+	 * this prepare() toggles reset and kills the panel for good.
+	 */
+	ctx->skip_reset = of_property_read_bool(dev->of_node,
+						"vxtux,panel-bootloader-initialized");
 
 	ctx->reset_gpio = devm_gpiod_get_optional(dev, "reset",
 						  GPIOD_OUT_LOW);
