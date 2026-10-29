@@ -31,6 +31,15 @@ struct vxtux_panel {
 	struct regulator *vcc;
 	struct regulator *iovcc;
 	bool prepared;
+	/*
+	 * Panel sudah di-initialize bootloader LK ("sprdfb" di uboot_log:
+	 * mipi_dsi_init, dphy, panel probe, backlight).  Bila properti DT
+	 * `vxtux,panel-bootloader-initialized` ada, prepare() TIDAK men-toggle
+	 * pin reset: panel HX83102E ini tidak punya sequence init vendor di
+	 * pohon kernel (semuanya masih milik LK), jadi men-reset panel hanya
+	 * akan mematikannya tanpa ada yang menghidupkan kembali -> layar hitam.
+	 */
+	bool skip_reset;
 };
 
 static inline struct vxtux_panel *panel_to_vxtux(struct drm_panel *panel)
@@ -84,13 +93,16 @@ static int vxtux_panel_prepare(struct drm_panel *panel)
 
 	msleep(20);
 
-	if (ctx->reset_gpio) {
+	if (ctx->reset_gpio && !ctx->skip_reset) {
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		usleep_range(10000, 11000);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 		usleep_range(10000, 11000);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		msleep(120);
+	} else if (ctx->reset_gpio) {
+		dev_info(ctx->dev,
+			 "reset-gpios dilewati: panel dipertahankan seperti hasil init LK\n");
 	}
 
 	ctx->prepared = true;
@@ -162,6 +174,15 @@ static int vxtux_panel_probe(struct mipi_dsi_device *dsi)
 		return PTR_ERR(ctx);
 
 	ctx->dev = dev;
+
+	/*
+	 * Inisialisasi panel milik LK (lihat uboot_log "[sprdfb]..."): kernel
+	 * tidak punya sequence init vendor, jadi secara default kita pertahankan
+	 * kondisi panel yang sudah hidup.  Tanpa ini prepare() akan men-toggle
+	 * reset dan mematikan panel tanpa jalan menghidupkannya lagi.
+	 */
+	ctx->skip_reset = of_property_read_bool(dev->of_node,
+						"vxtux,panel-bootloader-initialized");
 
 	ctx->reset_gpio = devm_gpiod_get_optional(dev, "reset",
 						  GPIOD_OUT_LOW);

@@ -3,6 +3,7 @@
  * Copyright (C) 2020 Unisoc Inc.
  */
 
+#include <linux/clk.h>
 #include <linux/component.h>
 #include <linux/delay.h>
 #include <linux/dma-buf.h>
@@ -795,6 +796,34 @@ static int sprd_dpu_context_init(struct sprd_dpu *dpu,
 	ctx->irq = platform_get_irq(pdev, 0);
 	if (ctx->irq < 0)
 		return ctx->irq;
+
+	/*
+	 * HIDUPKAN GATE CLOCK SEBELUM MENYENTUH REGISTER (artix50).
+	 *
+	 * Urutan ini yang benar dan sudah jadi praktik upstream: lihat patch
+	 * "drm: sprd: add clock gating support" (Otto Pflüger, dri-devel
+	 * 2025-07) yang menaruh devm_clk_get_optional_enabled(dev, "core")
+	 * TEPAT sebelum writel() pertama di fungsi ini.
+	 *
+	 * Di tablet ini nama clock-nya mengikuti DT stok (dpu@20300000):
+	 *   clock-names = "clk_src_96m", ..., "clk_dpu_core", "clk_dpu_dpi",
+	 *                 "clk_ap_ahb_disp_eb"
+	 * Yang dijaga di sini gate AHB-nya ("clk_ap_ahb_disp_eb"), karena
+	 * itulah yang memblokir akses register DISPC.
+	 *
+	 * Opsional: kalau DT tidak mendeklarasikan clock itu, driver tetap jalan
+	 * seperti dulu (perilaku lama) tanpa gagal probe.
+	 * Kalau DT mendeklarasikannya tetapi provider-nya belum ada (di tablet
+	 * ini SPRD_UMS512_CLK masih modul yang dimuat /vxtux/init), pemanggilan
+	 * ini mengembalikan -EPROBE_DEFER sehingga probe ditunda alih-alih
+	 * menulis ke blok yang masih digate (bus error -> SError -> panic).
+	 */
+	ctx->clk = devm_clk_get_optional_enabled(dev, "clk_ap_ahb_disp_eb");
+	if (IS_ERR(ctx->clk)) {
+		dev_err(dev, "failed to enable DPU AHB clock: %ld\n",
+			PTR_ERR(ctx->clk));
+		return PTR_ERR(ctx->clk);
+	}
 
 	/* disable and clear interrupts before register dpu IRQ. */
 	writel(0x00, ctx->base + REG_DPU_INT_EN);

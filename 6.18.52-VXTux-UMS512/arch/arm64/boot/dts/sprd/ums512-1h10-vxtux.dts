@@ -390,6 +390,51 @@
 	display-subsystem {
 		compatible = "sprd,display-subsystem";
 		ports = <&dpu_out>;
+		/*
+		 * DIMATIKAN (artix49, 2026-10-30).
+		 *
+		 * Gejala: fbcon (vxtux-lkfb) mencetak banyak teks, lalu layar HITAM
+		 * dan CLI tidak pernah muncul.  Sebabnya ada di pohon ini sendiri:
+		 *
+		 *  1. CONFIG_DRM_SPRD=y / CONFIG_DRM_SPRD_DPU=y / CONFIG_DRM_PANEL_*
+		 *     semuanya BUILT-IN, sedangkan pemasok clock-nya
+		 *     (CONFIG_SPRD_UMS512_CLK=m, CONFIG_SPRD_COMMON_CLK=m) masih
+		 *     MODUL yang baru dimuat /vxtux/init.  Jadi stack display ini
+		 *     probe SEBELUM ada clock provider yang terdaftar.
+		 *  2. drivers/gpu/drm/sprd/sprd_dpu.c tidak pernah memanggil clk_get()
+		 *     / clk_enable() (grep 'clk' = 0 hit), sehingga
+		 *     sprd_dpu_context_init() langsung me-remap + menulis register
+		 *     DISPC 0x20300000.  DISPC hanya hidup karena LK meninggalkan
+		 *     gate-nya terbuka - persis kelas bug yang di artix48 meledak di
+		 *     sprd_iommu (SError -> panic).
+		 *  3. sprd_drm_bind() lalu drm_dev_register() + drm_client_setup()
+		 *     memasang fbdev DRM dan KMS mengambil alih panel.  Panel driver
+		 *     masih memakai "default mode" (timing vendor belum diisi) dan
+		 *     reset/vcc/iovcc-nya bergantung pada regulator SC2730 yang juga
+		 *     masih MODUL.
+		 *
+		 * Akibatnya panel berhenti sinkron tepat saat stack DRM bind -> layar
+		 * mati walau fbcon sendiri sehat (fb0 = vxtux-lkfb tetap terdaftar).
+		 *
+		 * Di artix49 ketiga node dimatikan supaya vxtux-lkfb tetap satu-satunya
+		 * pemilik panel (konsol tidak bisa dibajak, sisa boot + panic terbaca).
+		 *
+		 * ARTIX50: syarat yang membuat node bisa dinyalakan lagi sudah
+		 * dipenuhi di DRIVER, bukan hanya di DT:
+		 *   - sprd_dpu.c  : devm_clk_get_optional_enabled(dev,
+		 *                   "clk_ap_ahb_disp_eb") SEBELUM writel pertama.
+		 *                   Tanpa provider clock -> -EPROBE_DEFER, jadi tidak
+		 *                   ada lagi tulis ke blok DISPC yang masih digate.
+		 *   - sprd_dsi.c  : sama, dengan "clk_ap_ahb_dsi_eb".
+		 *   - panel       : `vxtux,panel-bootloader-initialized` membuat
+		 *                   prepare() tidak men-toggle reset panel yang sudah
+		 *                   dihidupkan LK.
+		 *
+		 * KONSEKUENSI: DTB ini HANYA boleh di-flash bersama kernel yang sudah
+		 * memuat patch driver di atas (boot_artix50.img).  Dengan kernel lama
+		 * (artix45) hasilnya kembali layar blank seperti artix48.  Kalau kernel
+		 * baru belum ada, pakai tetap artix49 (ketiga node "disabled").
+		 */
 		status = "okay";
 	};
 };
@@ -401,6 +446,19 @@
 		reg = <0 0x20300000 0 0x1000>;
 		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&apahb_gate CLK_DISPC_EB>;
+		/*
+		 * artix50: status kembali "okay", tapi HANYA sah bersama kernel yang
+		 * sudah memakai clock gating (sprd_dpu.c memanggil
+		 * devm_clk_get_optional_enabled(dev, "clk_ap_ahb_disp_eb")).
+		 * Nama clock di bawah persis nama di DT stok perangkat ini
+		 * (dpu@20300000): clock-names "clk_dpu_core", "clk_dpu_dpi",
+		 * "clk_ap_ahb_disp_eb".  Yang dipakai driver = gate AHB DISPC.
+		 *
+		 * Dengan clock gating itu, bila provider clock (modul ums512-clk)
+		 * belum terdaftar, probe mengembalikan -EPROBE_DEFER: driver
+		 * menunggu, BUKAN menulis ke blok yang masih digate.
+		 */
+		clock-names = "clk_ap_ahb_disp_eb";
 		status = "okay";
 
 		port {
@@ -417,6 +475,12 @@
 		interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&apahb_gate CLK_DSI_EB>;
+		/*
+		 * artix50: sama seperti DPU -- wajib bersama kernel ber-clock gating
+		 * (sprd_dsi.c meminta "clk_ap_ahb_dsi_eb").  Nama ini juga yang
+		 * dipakai DT stok (dsi@20400000: clock-names "clk_ap_ahb_dsi_eb").
+		 */
+		clock-names = "clk_ap_ahb_dsi_eb";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "okay";
@@ -443,8 +507,19 @@
 		panel@0 {
 			compatible = "vxtux,ums512-panel";
 			reg = <0>;
-			/* timings & init-sequence vendor diisi setelah
-			 * diekstrak dari DT/firmware stok (lihat drm_kms_map.md) */
+			/*
+			 * Panel HX83102E ini di-initialize LK (`[sprdfb]` di uboot_log:
+			 * mipi_dsi_init -> dphy -> panel probe -> logo).  Pohon kernel
+			 * TIDAK punya sequence init vendor, jadi properti di bawah
+			 * memberi tahu driver supaya tidak men-toggle pin reset:
+			 * men-reset panel tanpa sequence = layar mati permanen.
+			 *
+			 * Timings di sprd_panel_vxtux.c masih placeholder
+			 * (1200x2000, clock 160 MHz).  Angka LK: 4 lane, DPHY
+			 * 1090 Mbps/lane; RGB888 -> pixel clock +/- 181,7 MHz.
+			 * Ini yang harus diverifikasi sebelum mode dianggap final.
+			 */
+			vxtux,panel-bootloader-initialized;
 			status = "okay";
 
 			port {
@@ -1951,6 +2026,45 @@ gpu_opp_table: opp-table {
 	 *   pll2        10 = CLK_TWPLL_128M   -> clk_src_128m
 	 *   pll2         9 = CLK_TWPLL_256M   -> clk_src_256m
 	 *   pll2         2 = CLK_TWPLL_384M   -> clk_src_384m
+	 * --------------------------------------------------------
+	 *
+	 * DISABLED (D8, 2026-10-29) -- penyebab panic di detik 19.55.
+	 *
+	 * Bug yang terbukti dari layar (bingkai disilangkan dengan System.map
+	 * build sendiri, 16 ukuran simbol cocok persis):
+	 *
+	 *   el1h_64_error -> do_serror -> arm64_serror_panic -> nmi_panic
+	 *     -> panic -> kmsg_dump_desc -> pstore_dump -> ramoops_pstore_write
+	 *   yang diinterupsi: iommu_attach_device <- iommu_setup_default_domain
+	 *     <- iommu_device_register <- sprd_iommu_probe <- sprd_iommu_driver_init
+	 *
+	 * Urutan di drivers/iommu/sprd-iommu.c:sprd_iommu_probe() adalah:
+	 *
+	 *   1. iommu_device_register()   <- memicu bus_iommu_probe()
+	 *   2. sprd_iommu_clk_enable()   <- gate clock BARU di sini
+	 *   3. sprd_iommu_get_version()  <- baca MMIO
+	 *
+	 * iommu_device_register() menemukan device `jpg` yang membawa
+	 * iommus = <&iommu_jpg>, lalu iommu_setup_default_domain() ->
+	 * iommu_attach_device() -> sprd_iommu_ops_attach_device() yang
+	 * MELAKUKAN writel_relaxed() ke 0x62700300 -- padahal gate clock
+	 * belum pernah dinyalakan (node ini bahkan tidak punya properti
+	 * `clocks`, jadi devm_clk_get_optional() mengembalikan NULL dan
+	 * sprd_iommu_clk_enable() menjadi no-op, apa pun urutannya).
+	 * MM block yang masih mati menjawab transaksi bus dengan error ->
+	 * SError tak sinkron -> panic.
+	 *
+	 * Catatan: iommu_isp / iommu_dcam memakai "sprd,iommuvau-*" sehingga
+	 * TIDAK pernah match of_match_table sprd-iommu (hanya "sprd,iommu-v1"),
+	 * jadi node ini SATU-SATUNYA yang memicu jalur berbahaya ini.
+	 *
+	 * Cara mengaktifkan lagi nanti:
+	 *   1. isi `clocks` node ini dengan gate MM yang benar (kandidat dari
+	 *      tabel di atas: <&mm_gate 1> CLK_MM_JPG_EB atau
+	 *      <&aonapb_gate 7> CLK_MM_EB),
+	 *   2. pindahkan sprd_iommu_clk_enable() ke SEBELUM
+	 *      iommu_device_register() di sprd_iommu_probe(),
+	 *   3. pastikan domain daya MM sudah hidup sebelum attach.
 	 * -------------------------------------------------------- */
 	iommu_jpg: iommu@62700300 {
 		compatible = "sprd,iommu-v1";
@@ -1958,7 +2072,7 @@ gpu_opp_table: opp-table {
 		sprd,iova-base = <0x60000000>;
 		sprd,iova-size = <0x10000000>;
 		#iommu-cells = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	jpg: jpg-codec@62700000 {
@@ -1968,7 +2082,10 @@ gpu_opp_table: opp-table {
 		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
 		reset-syscon = <&mm_ahb_regs 0x04 0x02>;
 		aon-apb-eb-syscon = <&aon_apb_regs 0x00 0x200>;
-		iommus = <&iommu_jpg>;
+		/* iommus = <&iommu_jpg>; dimatikan bersama iommu_jpg (D8, 2026-10-29).
+		 * Dengan status="disabled" pada node iommu, properti ini membuat
+		 * of_iommu_configure() menahan probe jpg selamanya (-EPROBE_DEFER)
+		 * tanpa pernah mendapat domain. Lihat catatan di node iommu_jpg. */
 		clocks = <&aonapb_gate 7>, <&mm_gate 1>, <&mm_gate 7>,
 			 <&mm_clk 6>,
 			 <&pll2 16>, <&pll2 10>, <&pll2 9>, <&pll2 2>;

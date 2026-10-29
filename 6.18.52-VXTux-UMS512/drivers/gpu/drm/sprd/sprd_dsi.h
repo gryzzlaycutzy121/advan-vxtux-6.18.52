@@ -85,6 +85,13 @@ struct dphy_pll {
 
 struct dsi_context {
 	void __iomem *base;
+	/*
+	 * Gate clock AHB DSI (artix50) -- lihat catatan di sprd_dpu.h.
+	 * Nama clock di DT mengikuti nama yang dipakai DT stok perangkat ini:
+	 * "clk_ap_ahb_dsi_eb".  Opsional supaya DT lama tanpa clock tetap boleh
+	 * probe, tetapi bila ada ia WAJIB hidup sebelum register DSI disentuh.
+	 */
+	struct clk *clk;
 	struct regmap *regmap;
 	struct dphy_pll pll;
 	struct videomode vm;
