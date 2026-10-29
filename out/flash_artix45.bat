@@ -36,24 +36,19 @@ set SPD=G:\UMS512\unlock\advan\spd_dump_new.exe
 set FDL1=G:\UMS512\unlock\advan\fdl1-dl.bin
 set FDL2=G:\UMS512\unlock\advan\fdl2-dl.bin
 set OUT=%~dp0
-set LOG=%OUT%logs\vb44
+set LOG=%OUT%logs\artix45
 set BOOT=%OUT%6.18.52-VXTux-UMS512\boot_artix45.img
-set VB=%LOG%\vendor_boot_patch44.img
 set PY=C:\Python314\python.exe
 
 if not exist "%SPD%"  ( echo [X] spd_dump tidak ada: %SPD%  & pause & exit /b 1 )
 if not exist "%BOOT%" ( echo [X] boot image tidak ada: %BOOT% & pause & exit /b 1 )
-if not exist "%VB%"   ( echo [X] vendor_boot patch tidak ada: %VB% & pause & exit /b 1 )
 if not exist "%LOG%"  mkdir "%LOG%"
 
 echo ============================================================
 echo  boot_a        ^<-  %BOOT%
 for %%A in ("%BOOT%") do echo   ukuran : %%~zA byte
-echo  vendor_boot_a ^<-  %VB%
-for %%A in ("%VB%")   do echo   ukuran : %%~zA byte
 if exist "%PY%" (
   "%PY%" -c "import hashlib;p=r'%BOOT%';print('  boot md5:',hashlib.md5(open(p,'rb').read()).hexdigest())"
-  "%PY%" -c "import hashlib;p=r'%VB%';d=open(p,'rb').read();print('  vb  md5  :',hashlib.md5(d).hexdigest());print('  vb  dtb  :',d[0x15be040:0x15be044]==bytes.fromhex('d00dfeed'))"
 )
 echo.
 echo  Tablet harus sudah di Mode Download (VOL DOWN + POWER, colok USB).
@@ -69,22 +64,21 @@ pushd "%LOG%"
   fdl "%FDL2%" 0x9efffe00 ^
   exec ^
   w boot_a "%BOOT%" ^
-  w vendor_boot_a "%VB%" ^
   reset
 set SPDRC=%ERRORLEVEL%
 popd
 
 echo.
 if not "%SPDRC%"=="0" (
-  echo [!] ada error -- cari "Write Part Done: boot_a" /
-  echo     "Write Part Done: vendor_boot_a" di atas.
+  echo [!] ada error -- cari "Write Part Done: boot_a" di atas.
 ) else (
-  echo [OK] boot_a + vendor_boot_a tertulis.
-  echo      Di layar cari:
-  echo        "VXTUX-BLDB:"            pintu debug kedua, langkah ke-N
-  echo        "VXTUX-LOG: ... 10 files"  bundle log sudah ditulis
-  echo        "VXTUX-DEFER[post-modules]" device yang masih tanpa driver
-  echo        "storage ready after Ns"   eMMC hidup
+  echo [OK] boot_a tertulis ^(vendor_boot_a tidak disentuh^).
+  echo      Di layar cari, berurutan:
+  echo        "VXTUX-ITRACE: kernel alive"   tracer hidup
+  echo        "<nomor> <nama initcall>"       baris TERAKHIR = titik macet
+  echo        "vxtux-lkfb: LK fb ... fbcon active"  konsol teks hidup
+  echo        "VXTUX-STEP: 0/5 init alive"    userspace jalan
+  echo        "VXTUX-SUPER: ..."              isi partisi super
   echo        "chroot OK, exec /sbin/init" masuk Artix
   echo      Lalu jalankan dump_artix45_logonly.bat.
 )
