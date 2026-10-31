@@ -42,7 +42,10 @@ STRIP=$CLANG/bin/llvm-strip
 # Flag CFI PERSIS vendor UNISOC (Makefile:924-943): -fno-sanitize-cfi-canonical-jump-tables
 # wajib (tanpa ini loader stok tolak: canonical jt memecah .text jadi section .cfi.jumptable).
 # -ftrap-function=__ubsan_handle_cfi_check_fail_abort (CONFIG_CFI_PERMISSIVE off).
-CFI_KCFLAGS="-flto=full -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables -fno-sanitize-blacklist -fsanitize-cfi-cross-dso -ftrap-function=__ubsan_handle_cfi_check_fail_abort -fvisibility=hidden -fPIC"
+# -fPIC HARAM: kernel non-PIC; -fPIC -> relokasi GOT 311/312 -> loader menolak
+# ("unsupported RELA relocation: 312"). Section .plt/.init.plt/.text.ftrace_trampoline
+# di-inject via llvm-objcopy (persis arch/arm64/kernel/module.lds vendor).
+CFI_KCFLAGS="-flto=full -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables -fno-sanitize-blacklist -fsanitize-cfi-cross-dso -ftrap-function=__ubsan_handle_cfi_check_fail_abort -fvisibility=hidden"
 
 common_make() {
   make -C "$KSRC" ARCH=arm64 \
@@ -133,6 +136,17 @@ for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
   "$CLANG/bin/ld.lld" -r "$OUT/$m.o" "$OUT/$m.mod.o" \
       -o "$OUT/$m.ko" >> "$OUT/link.log" 2>&1 \
       || { echo "link $m.ko gagal:"; tail -6 "$OUT/link.log"; continue; }
+  # Inject .plt/.init.plt/.text.ftrace_trampoline (loader arm64 WAJIB punya
+  # section .plt/.init.plt; link manual ld.lld -r tidak menjalankan
+  # arch/arm64/kernel/module.lds). Kernel menulis ulang section ini sendiri.
+  # Tanpa 3 section ini: "module PLT section(s) missing".
+  printf '\0' > "$OUT/pltbyte.bin"
+  "$CLANG/bin/llvm-objcopy" \
+      --add-section=.plt="$OUT/pltbyte.bin" \
+      --add-section=.init.plt="$OUT/pltbyte.bin" \
+      --add-section=.text.ftrace_trampoline="$OUT/pltbyte.bin" \
+      "$OUT/$m.ko" 2>>"$OUT/link.log" \
+      || { echo "objcopy $m.ko gagal:"; tail -4 "$OUT/link.log"; continue; }
   echo "OK  $m.ko ($(stat -c%s "$OUT/$m.ko")B)"
 done
 
