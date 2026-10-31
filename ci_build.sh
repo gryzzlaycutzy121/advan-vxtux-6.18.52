@@ -63,7 +63,7 @@ cat > "$KSRC/bfkrt_ko/Makefile" <<'EOF'
 obj-m := berryfetcher_kernel.o berry_trig_all.o berry_m_virtkrn_obs.o
 EOF
 set +e
-common_make M=bfkrt_ko KCFLAGS="$CFI_KCFLAGS" modules > "$OUT/pass1.log" 2>&1
+common_make M=bfkrt_ko KCFLAGS="$CFI_KCFLAGS" V=1 modules > "$OUT/pass1.log" 2>&1
 P1=$?
 set -e
 echo "pass1 exit=$P1 (modpost gagal baca bitcode = NORMAL)"
@@ -82,26 +82,42 @@ for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
   echo "LTO $m: $(file -b "$OUT/$m.o")"
 done
 
-echo "===== [4/6] pass 2: modpost + link final (KCFLAGS sama -> .o tak di-ulang) ====="
-common_make M=bfkrt_ko KCFLAGS="$CFI_KCFLAGS" modules > "$OUT/pass2.log" 2>&1
+echo "===== [4/6] pass 2 via kbuild: modpost baca .o ELF -> .mod.c -> .ko ====="
+# .o sudah ELF (hasil LTO) dan lebih baru dari .c -> kbuild TIDAK recompile.
+# __modpost (FORCE) dijalankan ulang: modpost baca .o ELF -> sukses -> .mod.c
+# -> .mod.o (KCFLAGS CFI juga) -> ld.lld -r (LTO) -> .ko final.
+set +e
+common_make M=bfkrt_ko KCFLAGS="$CFI_KCFLAGS" V=1 modules > "$OUT/pass2.log" 2>&1
 P2=$?
+set -e
 echo "pass2 exit=$P2"
-tail -20 "$OUT/pass2.log"
+tail -8 "$OUT/pass2.log"
 
-echo "===== [5/6] verifikasi .ko ====="
+echo "===== [5/6] salin .ko hasil kbuild ke OUT ====="
 for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
   ko="$KSRC/bfkrt_ko/$m.ko"
   if [ -f "$ko" ]; then
+    cp -f "$ko" "$OUT/$m.ko"
+    echo "OK  $m.ko ($(stat -c%s "$ko")B)"
+  else
+    echo "GAGAL: $m.ko tidak dihasilkan (lihat pass2.log)"
+  fi
+done
+
+echo "===== [6/6] verifikasi .ko ====="
+for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
+  ko="$OUT/$m.ko"
+  if [ -f "$ko" ]; then
     vm=$(strings "$ko" | grep -m1 '^vermagic=' || echo "(tanpa vermagic)")
     sz=$(stat -c%s "$ko")
-    cfis=$(readelf -S "$ko" 2>/dev/null | grep -c cfi_jt || echo 0)
-    echo "OK  $m.ko  size=${sz}B  cfi_jt_sections=$cfis"
+    cfis=$(readelf -S "$ko" 2>/dev/null | grep -c cfi || echo 0)
+    has_check=$(nm "$ko" 2>/dev/null | grep -c '__cfi_check' || echo 0)
+    echo "OK  $m.ko  size=${sz}B  cfi_sections=$cfis  __cfi_check=$has_check"
     echo "    $vm"
-    cp -f "$ko" "$OUT/"
   else
     echo "GAGAL: $m.ko tidak dihasilkan"
   fi
 done
 
-echo "===== [6/6] selesai; artefak di $OUT ====="
+echo "===== [7/7] selesai; artefak di $OUT ====="
 ls -la "$OUT"/*.ko 2>/dev/null || true
