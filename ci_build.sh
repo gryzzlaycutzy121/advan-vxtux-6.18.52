@@ -115,24 +115,16 @@ done
 [ -n "$MODC_DIR" ] || { echo "GAGAL: .mod.c tidak ditemukan (lihat modpost.log)"; tail -15 "$OUT/modpost.log"; exit 1; }
 echo "MODC_DIR=$MODC_DIR"
 
-# helper: ekstrak flags compile (tanpa LTO/CFI/-c/-o/paths) utk SATU modul
-extract_flags() {
-  local m="$1"
-  local line
-  line=$(grep -m1 "$m\.c" "$OUT/pass1.log" | grep 'clang' | grep -- '-c ')
-  [ -n "$line" ] || { echo "(gagal ekstrak flags utk $m)"; return 1; }
-  echo "$line" | sed -E \
-    's#.*clang #clang #; s# -c ##g; s# -o ##g; s#-flto=[a-z]+##g; s#-fsanitize=[a-z]+##g; s#-fsanitize-cfi-cross-dso##g; s#-fsanitize-cfi-canonical-jump-tables##g; s#-fvisibility=hidden##g; s#-fPIC##g; s#  *# #g' \
-  | sed -E 's# [^ -][^ ]*\.(o|c|d|cmd|tmp|mod) ##g; s# -Wp,[^ ]*##g; s#-MF [^ ]*##g; s#-MT [^ ]*##g; s#-MQ [^ ]*##g; s#  *# #g'
-}
+# flags tetap untuk compile .mod.c (tanpa LTO/CFI; terbukti valid di uji lokal)
+# Nama modul (KBUILD_MODNAME) diambil per-modul dari pass1.log.
+MODC_TEMPLATE='--target=aarch64-linux-gnu -nostdinc -isystem /opt/clang-r416183b/lib64/clang/12.0.5/include -I./arch/arm64/include -I./arch/arm64/include/generated -I./include -I./arch/arm64/include/uapi -I./arch/arm64/include/generated/uapi -I./include/uapi -I./include/generated/uapi -include ./include/linux/kconfig.h -include ./include/linux/compiler_types.h -D__KERNEL__ -mlittle-endian -Qunused-arguments -Wall -Wundef -Wno-trigraphs -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE -std=gnu89 -no-integrated-as -mgeneral-regs-only -fno-asynchronous-unwind-tables -Wno-psabi -mbranch-protection=none -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls -g -gdwarf-4 -fno-strict-overflow -fno-merge-all-constants -fno-stack-check -fmacro-prefix-map=./= -DMODULE'
 
 echo "===== [5/6] compile .mod.c (tanpa LTO) + link .ko (tanpa LTO) ====="
 for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
   modc="$MODC_DIR/$m.mod.c"
   [ -f "$modc" ] || { echo "GAGAL: $modc tidak ada"; continue; }
-  FLAGS=$(extract_flags "$m" || true)
-  echo "== $m: FLAGS=$FLAGS"
-  "$CLANG/bin/clang" --target=aarch64-linux-gnu $FLAGS \
+  "$CLANG/bin/clang" $MODC_TEMPLATE \
+      -DKBUILD_BASENAME=\"$m\" -DKBUILD_MODNAME=\"$m\" \
       -c "$modc" -o "$OUT/$m.mod.o" >> "$OUT/link.log" 2>&1 \
       || { echo "compile $m.mod.o gagal:"; tail -6 "$OUT/link.log"; continue; }
   "$CLANG/bin/ld.lld" -r "$OUT/$m.o" "$OUT/$m.mod.o" \
