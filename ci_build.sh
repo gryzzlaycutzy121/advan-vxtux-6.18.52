@@ -101,7 +101,7 @@ cat bfkrt_ko/modules.order
 [ -f Module.symvers ] || touch Module.symvers
 [ -f bfkrt_ko/Module.symvers ] || touch bfkrt_ko/Module.symvers
 sed 's/ko$/o/' bfkrt_ko/modules.order | scripts/mod/modpost \
-    -m -i Module.symvers -o bfkrt_ko/Module.symvers -w \
+    -m -i Module.symvers -o bfkrt_ko/Module.symvers -w -T - \
     > "$OUT/modpost.log" 2>&1 || {
   echo "modpost gagal:"; tail -15 "$OUT/modpost.log"; exit 1; }
 echo "modpost OK; cari .mod.c:"
