@@ -98,8 +98,16 @@ sed 's/ko$/o/' "$MODORDER" | scripts/mod/modpost \
     -m -i Module.symvers -o bfkrt_ko/Module.symvers -w \
     > "$OUT/modpost.log" 2>&1 || {
   echo "modpost gagal:"; tail -15 "$OUT/modpost.log"; exit 1; }
-echo "modpost OK:"
-ls -la bfkrt_ko/*.mod.c 2>/dev/null
+echo "modpost OK; cari .mod.c:"
+ls -la bfkrt_ko/*.mod.c 2>/dev/null || echo "(tidak di bfkrt_ko/)"
+ls -la ./*.mod.c 2>/dev/null || echo "(tidak di root)"
+# lokasi .mod.c bisa di bfkrt_ko/ ATAU root tergantung cara modpost ditulis
+MODC_DIR=""
+for d in bfkrt_ko .; do
+  if ls "$d"/*.mod.c >/dev/null 2>&1; then MODC_DIR="$d"; break; fi
+done
+[ -n "$MODC_DIR" ] || { echo "GAGAL: .mod.c tidak ditemukan (lihat modpost.log)"; tail -15 "$OUT/modpost.log"; exit 1; }
+echo "MODC_DIR=$MODC_DIR"
 
 # helper: ekstrak flags compile (tanpa LTO/CFI/-c/-o/paths) utk SATU modul
 extract_flags() {
@@ -114,9 +122,9 @@ extract_flags() {
 
 echo "===== [5/6] compile .mod.c (tanpa LTO) + link .ko (tanpa LTO) ====="
 for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
-  modc="bfkrt_ko/$m.mod.c"
+  modc="$MODC_DIR/$m.mod.c"
   [ -f "$modc" ] || { echo "GAGAL: $modc tidak ada"; continue; }
-  FLAGS=$(extract_flags "$m")
+  FLAGS=$(extract_flags "$m" || true)
   echo "== $m: FLAGS=$FLAGS"
   "$CLANG/bin/clang" --target=aarch64-linux-gnu $FLAGS \
       -c "$modc" -o "$OUT/$m.mod.o" >> "$OUT/link.log" 2>&1 \
