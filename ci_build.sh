@@ -45,7 +45,7 @@ STRIP=$CLANG/bin/llvm-strip
 # -fPIC HARAM: kernel non-PIC; -fPIC -> relokasi GOT 311/312 -> loader menolak
 # ("unsupported RELA relocation: 312"). Section .plt/.init.plt/.text.ftrace_trampoline
 # di-inject via llvm-objcopy (persis arch/arm64/kernel/module.lds vendor).
-CFI_KCFLAGS="-flto=full -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables -fno-sanitize-blacklist -fsanitize-cfi-cross-dso -ftrap-function=__ubsan_handle_cfi_check_fail_abort -fvisibility=hidden"
+CFI_KCFLAGS="-flto=full -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables -fno-sanitize-blacklist -fsanitize-cfi-cross-dso -ftrap-function=__ubsan_handle_cfi_check_fail_abort -fvisibility=hidden -fno-sanitize=bounds -fno-sanitize=shift -fno-sanitize=integer-divide-by-zero -fno-sanitize=unreachable -fno-sanitize=signed-integer-overflow -fno-sanitize=object-size -fno-sanitize=bool -fno-sanitize=enum -fno-sanitize=alignment"
 
 common_make() {
   make -C "$KSRC" ARCH=arm64 \
