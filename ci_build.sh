@@ -82,26 +82,47 @@ for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
   echo "LTO $m: $(file -b "$OUT/$m.o")"
 done
 
-echo "===== [4/6] pass 2 via kbuild: modpost baca .o ELF -> .mod.c -> .ko ====="
-# .o sudah ELF (hasil LTO) dan lebih baru dari .c -> kbuild TIDAK recompile.
-# __modpost (FORCE) dijalankan ulang: modpost baca .o ELF -> sukses -> .mod.c
-# -> .mod.o (KCFLAGS CFI juga) -> ld.lld -r (LTO) -> .ko final.
-set +e
-common_make M=bfkrt_ko KCFLAGS="$CFI_KCFLAGS" V=1 modules > "$OUT/pass2.log" 2>&1
-P2=$?
-set -e
-echo "pass2 exit=$P2"
-tail -8 "$OUT/pass2.log"
+echo "===== [4/6] modpost manual: .o ELF -> .mod.c ====="
+# kbuild __modpost membaca .o via modules.order; tapi pass 2 kbuild akan
+# re-LTO .mod.c (KCFLAGS -flto) -> __cfi_check GANDA. Jadi:
+#   a) modpost manual: sed 's/ko$$/o/' modules.order | scripts/mod/modpost
+#   b) compile .mod.c TANPA LTO, flags diekstrak PER-MODUL dari pass1.log
+#   c) ld.lld -r TANPA LTO: .o (ELF) + .mod.o (ELF) -> .ko
+cd "$KSRC"
+[ -f modules.order ] || { echo "GAGAL: modules.order tidak ada"; exit 1; }
+[ -f Module.symvers ] || touch Module.symvers
+[ -f bfkrt_ko/Module.symvers ] || touch bfkrt_ko/Module.symvers
+sed 's/ko$/o/' modules.order | scripts/mod/modpost \
+    -m -i Module.symvers -o bfkrt_ko/Module.symvers -w \
+    > "$OUT/modpost.log" 2>&1 || {
+  echo "modpost gagal:"; tail -15 "$OUT/modpost.log"; exit 1; }
+echo "modpost OK:"
+ls -la bfkrt_ko/*.mod.c 2>/dev/null
 
-echo "===== [5/6] salin .ko hasil kbuild ke OUT ====="
+# helper: ekstrak flags compile (tanpa LTO/CFI/-c/-o/paths) utk SATU modul
+extract_flags() {
+  local m="$1"
+  local line
+  line=$(grep -m1 "$m\.c" "$OUT/pass1.log" | grep 'clang' | grep -- '-c ')
+  [ -n "$line" ] || { echo "(gagal ekstrak flags utk $m)"; return 1; }
+  echo "$line" | sed -E \
+    's#.*clang #clang #; s# -c ##g; s# -o ##g; s#-flto=[a-z]+##g; s#-fsanitize=[a-z]+##g; s#-fsanitize-cfi-cross-dso##g; s#-fsanitize-cfi-canonical-jump-tables##g; s#-fvisibility=hidden##g; s#-fPIC##g; s#  *# #g' \
+  | sed -E 's# [^ -][^ ]*\.(o|c|d|cmd|tmp|mod) ##g; s# -Wp,[^ ]*##g; s#-MF [^ ]*##g; s#-MT [^ ]*##g; s#-MQ [^ ]*##g; s#  *# #g'
+}
+
+echo "===== [5/6] compile .mod.c (tanpa LTO) + link .ko (tanpa LTO) ====="
 for m in berryfetcher_kernel berry_trig_all berry_m_virtkrn_obs; do
-  ko="$KSRC/bfkrt_ko/$m.ko"
-  if [ -f "$ko" ]; then
-    cp -f "$ko" "$OUT/$m.ko"
-    echo "OK  $m.ko ($(stat -c%s "$ko")B)"
-  else
-    echo "GAGAL: $m.ko tidak dihasilkan (lihat pass2.log)"
-  fi
+  modc="bfkrt_ko/$m.mod.c"
+  [ -f "$modc" ] || { echo "GAGAL: $modc tidak ada"; continue; }
+  FLAGS=$(extract_flags "$m")
+  echo "== $m: FLAGS=$FLAGS"
+  "$CLANG/bin/clang" --target=aarch64-linux-gnu $FLAGS \
+      -c "$modc" -o "$OUT/$m.mod.o" >> "$OUT/link.log" 2>&1 \
+      || { echo "compile $m.mod.o gagal:"; tail -6 "$OUT/link.log"; continue; }
+  "$CLANG/bin/ld.lld" -r "$OUT/$m.o" "$OUT/$m.mod.o" \
+      -o "$OUT/$m.ko" >> "$OUT/link.log" 2>&1 \
+      || { echo "link $m.ko gagal:"; tail -6 "$OUT/link.log"; continue; }
+  echo "OK  $m.ko ($(stat -c%s "$OUT/$m.ko")B)"
 done
 
 echo "===== [6/6] verifikasi .ko ====="
