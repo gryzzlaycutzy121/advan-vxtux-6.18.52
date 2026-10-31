@@ -39,7 +39,10 @@ OBJCOPY=$CLANG/bin/llvm-objcopy
 STRIP=$CLANG/bin/llvm-strip
 
 # ---- Flag CFI v1 (persis kernel stok: FullLTO + CFI + cross-DSO) ----
-CFI_KCFLAGS="-flto=full -fsanitize=cfi -fsanitize-cfi-cross-dso -fsanitize-cfi-canonical-jump-tables -fvisibility=hidden -fPIC"
+# Flag CFI PERSIS vendor UNISOC (Makefile:924-943): -fno-sanitize-cfi-canonical-jump-tables
+# wajib (tanpa ini loader stok tolak: canonical jt memecah .text jadi section .cfi.jumptable).
+# -ftrap-function=__ubsan_handle_cfi_check_fail_abort (CONFIG_CFI_PERMISSIVE off).
+CFI_KCFLAGS="-flto=full -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables -fno-sanitize-blacklist -fsanitize-cfi-cross-dso -ftrap-function=__ubsan_handle_cfi_check_fail_abort -fvisibility=hidden -fPIC"
 
 common_make() {
   make -C "$KSRC" ARCH=arm64 \
