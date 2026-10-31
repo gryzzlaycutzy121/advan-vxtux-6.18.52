@@ -89,12 +89,18 @@ echo "===== [4/6] modpost manual: .o ELF -> .mod.c ====="
 #   b) compile .mod.c TANPA LTO, flags diekstrak PER-MODUL dari pass1.log
 #   c) ld.lld -r TANPA LTO: .o (ELF) + .mod.o (ELF) -> .ko
 cd "$KSRC"
-MODORDER="bfkrt_ko/modules.order"
-[ -f "$MODORDER" ] || MODORDER="modules.order"   # fallback
-[ -f "$MODORDER" ] || { echo "GAGAL: modules.order tidak ada (coba: $MODORDER)"; ls -la bfkrt_ko/*.order 2>/dev/null; exit 1; }
+# modules.order dari kbuild sering kosong (pass1 gagal sebelum MODORDER ditulis).
+# Tulis MANUAL: deterministik, modul yang memang kita bangun.
+{
+  echo "bfkrt_ko/berryfetcher_kernel.ko"
+  echo "bfkrt_ko/berry_trig_all.ko"
+  echo "bfkrt_ko/berry_m_virtkrn_obs.ko"
+} > bfkrt_ko/modules.order
+echo "modules.order manual:"
+cat bfkrt_ko/modules.order
 [ -f Module.symvers ] || touch Module.symvers
 [ -f bfkrt_ko/Module.symvers ] || touch bfkrt_ko/Module.symvers
-sed 's/ko$/o/' "$MODORDER" | scripts/mod/modpost \
+sed 's/ko$/o/' bfkrt_ko/modules.order | scripts/mod/modpost \
     -m -i Module.symvers -o bfkrt_ko/Module.symvers -w \
     > "$OUT/modpost.log" 2>&1 || {
   echo "modpost gagal:"; tail -15 "$OUT/modpost.log"; exit 1; }
