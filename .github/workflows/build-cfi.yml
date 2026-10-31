@@ -1,6 +1,11 @@
 name: build-bfkrt-5.4-cfi
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/build-cfi.yml'
+      - 'ci_build.sh'
+      - 'modules54/**'
 
 jobs:
   build-cfi:
