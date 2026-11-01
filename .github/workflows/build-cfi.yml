@@ -1,0 +1,80 @@
+name: build-bfkrt-5.4-cfi
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/build-cfi.yml'
+      - 'ci_build.sh'
+      - 'modules54/**'
+
+jobs:
+  build-cfi:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libncurses-dev flex bison bc libssl-dev libelf-dev \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            cpio xz-utils curl wget
+
+      - name: Download Android clang r416183b (ELF linux-x86)
+        run: |
+          # commit d14f23102d4d32ff46eb038a1a07b297d3d5ee8e = parent yang masih
+          # punya clang-r416183b (dihapus di 7b683891a021)
+          mkdir -p /opt/clang-r416183b
+          cd /opt/clang-r416183b
+          curl -fsSL -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/d14f23102d4d32ff46eb038a1a07b297d3d5ee8e/clang-r416183b.tar.gz" \
+            --retry 3
+          tar -xzf clang.tar.gz
+          rm -f clang.tar.gz
+          chmod +x bin/clang bin/clang.real bin/ld.lld bin/lld bin/llvm-* bin/ld.lld 2>/dev/null || true
+          ./bin/clang.real --version | head -2
+          ./bin/clang --version | head -2
+
+      - name: Clone vendor UMS512 kernel tree (5.4.210 Unisoc/SPRD)
+        run: |
+          # WAJIB pohon vendor, bukan vanilla: struct module vendor punya
+          # cfi_check (+8B) dan ANDROID_KABI_RESERVE(1..4) (+32B) sehingga
+          # offset field init 0x178, bukan 0x150 seperti di vanilla.
+          # Modul yang dibangun thd struct vanilla menaruh .init di offset
+          # salah -> kernel baca mod->init NULL -> init tak pernah jalan
+          # (insmod rc=0, initstate=live, tanpa proc/printk).
+          mkdir -p /tmp/bfk54
+          cd /tmp/bfk54
+          git clone --depth 1 --branch master \
+            https://github.com/marohinmark/kernel_ums512_5.4.git linux
+          test -f linux/include/linux/module.h
+          grep -n 'cfi_check\|ANDROID_KABI_RESERVE(1)' linux/include/linux/module.h | head
+          # Hapus .git -> hilangkan -gXXXX dari vermagic; SUBLEVEL 254->210
+          # supaya vermagic = 5.4.210 (persis kernel device), bukan
+          # 5.4.254-gead7c4e34de9. Jika SUBLEVEL vendor bukan 254, sed
+          # hanya no-op dan SUBLEVEL=210 diset via command line make.
+          rm -rf linux/.git
+          sed -i 's/^SUBLEVEL = 254/SUBLEVEL = 210/' linux/Makefile || true
+          grep -n '^SUBLEVEL' linux/Makefile | head -2
+          ls -d linux
+        timeout-minutes: 20
+
+      - name: Build modules (clang r416183b + CFI v1)
+        run: |
+          bash ci_build.sh
+          ls -la /tmp/bfk54/out/*.ko
+
+      - name: Tar .ko
+        run: |
+          tar -czf /tmp/bfk54/bfkrt54-cfi.tar.gz -C /tmp/bfk54/out .
+          ls -lh /tmp/bfk54/bfkrt54-cfi.tar.gz
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfkrt54-cfi
+          path: /tmp/bfk54/bfkrt54-cfi.tar.gz
+          if-no-files-found: error
