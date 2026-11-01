@@ -38,14 +38,22 @@ jobs:
           ./bin/clang.real --version | head -2
           ./bin/clang --version | head -2
 
-      - name: Download Linux 5.4.210 vanilla
+      - name: Clone vendor UMS512 kernel tree (5.4.210 Unisoc/SPRD)
         run: |
+          # WAJIB pohon vendor, bukan vanilla: struct module vendor punya
+          # cfi_check (+8B) dan ANDROID_KABI_RESERVE(1..4) (+32B) sehingga
+          # offset field init 0x178, bukan 0x150 seperti di vanilla.
+          # Modul yang dibangun thd struct vanilla menaruh .init di offset
+          # salah -> kernel baca mod->init NULL -> init tak pernah jalan
+          # (insmod rc=0, initstate=live, tanpa proc/printk).
           mkdir -p /tmp/bfk54
           cd /tmp/bfk54
-          curl -fsSL -o linux.tar.xz \
-            "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.210.tar.xz" --retry 3
-          tar -xJf linux.tar.xz
-          ls -d linux-5.4.210
+          git clone --depth 1 --branch master \
+            https://github.com/marohinmark/kernel_ums512_5.4.git linux
+          test -f linux/include/linux/module.h
+          grep -n 'cfi_check\|ANDROID_KABI_RESERVE(1)' linux/include/linux/module.h | head
+          ls -d linux
+        timeout-minutes: 20
 
       - name: Build modules (clang r416183b + CFI v1)
         run: |
