@@ -123,7 +123,7 @@ static int __init bfkrt_init(void)
 		pr_err("berryfetcher: gagal buat /proc/%s\n", BFKRT_PROC_SYM);
 		return -ENOMEM;
 	}
-	pr_info("berryfetcher: siap (resolver %s)\n", bf_kln ? "aktif" : "pasif");
+	pr_info("berryfetcher: siap (resolver %s)\n", bf_ok ? "aktif" : "pasif");
 	return 0;
 }
 
