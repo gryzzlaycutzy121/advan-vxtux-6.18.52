@@ -52,6 +52,13 @@ jobs:
             https://github.com/marohinmark/kernel_ums512_5.4.git linux
           test -f linux/include/linux/module.h
           grep -n 'cfi_check\|ANDROID_KABI_RESERVE(1)' linux/include/linux/module.h | head
+          # Hapus .git -> hilangkan -gXXXX dari vermagic; SUBLEVEL 254->210
+          # supaya vermagic = 5.4.210 (persis kernel device), bukan
+          # 5.4.254-gead7c4e34de9. Jika SUBLEVEL vendor bukan 254, sed
+          # hanya no-op dan SUBLEVEL=210 diset via command line make.
+          rm -rf linux/.git
+          sed -i 's/^SUBLEVEL = 254/SUBLEVEL = 210/' linux/Makefile || true
+          grep -n '^SUBLEVEL' linux/Makefile | head -2
           ls -d linux
         timeout-minutes: 20
 
