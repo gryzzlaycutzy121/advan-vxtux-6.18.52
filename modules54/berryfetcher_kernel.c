@@ -21,20 +21,27 @@
 #include <linux/jiffies.h>
 #include "bfkrt_ko.h"
 
-static unsigned long (*bf_kln)(const char *name);
 static char bf_sym[64];
+static bool bf_ok;
 
-static int kln_pre(struct kprobe *p, struct pt_regs *regs)
+/*
+ * Resolve alamat simbol TANPA memanggil kallsyms_lookup_name lewat function
+ * pointer. Kernel stok dibangun dgn CFI v1 (clang OEM); modul dibangun dgn
+ * clang r416183b -> type hash CFI beda -> pemanggilan FP lintas-modul yang
+ * di-cast = "CFI failure" -> PANIC. register_kprobe memakai
+ * kprobe_lookup_name INTERNAL (tidak lewat FP modul) -> aman.
+ */
+static unsigned long bf_resolve(const char *name)
 {
-	/* p->addr = alamat kallsyms_lookup_name pada kernel yang sedang jalan */
-	bf_kln = (unsigned long (*)(const char *))p->addr;
-	return 0;
-}
+	struct kprobe kp = { .symbol_name = (char *)name };
+	unsigned long addr = 0;
 
-static struct kprobe kln_kp = {
-	.symbol_name = "kallsyms_lookup_name",
-	.pre_handler = kln_pre,
-};
+	if (register_kprobe(&kp) == 0) {
+		addr = (unsigned long)kp.addr;
+		unregister_kprobe(&kp);
+	}
+	return addr;
+}
 
 static int info_show(struct seq_file *m, void *v)
 {
@@ -42,7 +49,7 @@ static int info_show(struct seq_file *m, void *v)
 	seq_printf(m, "release : %s\n", init_utsname()->release);
 	seq_printf(m, "banner  : %s\n", init_utsname()->version);
 	seq_printf(m, "uptime  : %lu detik\n", jiffies / HZ);
-	seq_printf(m, "resolver: %s\n", bf_kln ? "siap" : "tidak tersedia");
+	seq_printf(m, "resolver: %s\n", bf_ok ? "siap" : "tidak tersedia");
 	seq_printf(m, "cara    : tulis nama simbol ke /proc/bfkrt_sym, lalu baca lagi\n");
 	return 0;
 }
@@ -55,11 +62,11 @@ static ssize_t sym_read(struct file *f, char __user *buf, size_t count, loff_t *
 	if (!bf_sym[0]) {
 		len = scnprintf(kbuf, sizeof(kbuf),
 				"(kosong) tulis nama simbol ke /proc/bfkrt_sym\n");
-	} else if (!bf_kln) {
+	} else if (!bf_ok) {
 		len = scnprintf(kbuf, sizeof(kbuf),
-				"%s = ? (kallsyms_lookup_name tidak terjangkau)\n", bf_sym);
+				"%s = ? (resolver tidak tersedia)\n", bf_sym);
 	} else {
-		unsigned long a = bf_kln(bf_sym);
+		unsigned long a = bf_resolve(bf_sym);
 		len = scnprintf(kbuf, sizeof(kbuf), "%s = 0x%lx%s\n",
 				bf_sym, a, a ? "" : " (tidak ketemu)");
 	}
@@ -93,19 +100,18 @@ static const struct file_operations sym_ops = {
 
 static int __init bfkrt_init(void)
 {
+	struct kprobe kp_self = { .symbol_name = "spi_sync" };
 	int ret;
 
-	ret = register_kprobe(&kln_kp);
+	/* Self-test: resolve satu simbol yang pasti ada. Kalau register_kprobe
+	 * + lookup internal berhasil, resolver siap. TIDAK pernah memanggil
+	 * kallsyms_lookup_name via function pointer -> CFI failure/panic. */
+	ret = register_kprobe(&kp_self);
 	if (ret == 0) {
-		/* register_kprobe mengisi kln_kp.addr dengan alamat
-		 * kallsyms_lookup_name hasil resolusi symbol_name. Pre_handler
-		 * TIDAK dipakai: kprobe langsung dilepas, dan kallsyms_lookup_name
-		 * memang tidak dipanggil spontan sehingga handler takkan pernah
-		 * fire. addr dari struct kprobe-lah sumber alamat yang benar. */
-		bf_kln = (unsigned long (*)(const char *))kln_kp.addr;
-		unregister_kprobe(&kln_kp);
+		bf_ok = true;
+		unregister_kprobe(&kp_self);
 	} else {
-		pr_info("berryfetcher: kallsyms_lookup_name tidak terjangkau (%d)\n", ret);
+		pr_info("berryfetcher: resolver via kprobe gagal (%d)\n", ret);
 	}
 
 	if (!proc_create_single(BFKRT_PROC_INFO, 0444, NULL, info_show)) {
