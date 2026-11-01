@@ -67,15 +67,18 @@ static unsigned int bf_fail;	/* simbol yang tidak ada di kernel ini */
 static const char *const bf_syms[] = {
 	"regulator_enable",
 	"regulator_disable",
-	"clk_enable",		/* clk_prepare_enable = inline, tidak di kallsyms */
-	"clk_disable",		/* clk_disable_unprepare = inline */
 	"clk_set_rate",
 	"i2c_transfer",
 	"spi_sync",
-	"__pm_runtime_resume",	/* pm_runtime_get_sync = inline */
-	"__pm_runtime_suspend",	/* pm_runtime_put_sync = inline */
 	"driver_probe_device",
 	"driver_deferred_probe_add",
+	/*
+	 * clk_enable/clk_disable/__pm_runtime_resume/__pm_runtime_suspend
+	 * DIKECUALIKAN (terbukti empiris): kprobe pada hot path ini dipanggil
+	 * dari konteks interrupt/NMI, handler bf_pre (spin_lock_irqsave +
+	 * ktime_get_ns) membuat device PANIC -> reboot. 7 simbol di atas
+	 * stabil (device hidup 198 hari tanpa crash).
+	 */
 };
 
 static struct kprobe bf_kps[ARRAY_SIZE(bf_syms)];
