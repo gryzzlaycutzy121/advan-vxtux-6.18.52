@@ -67,13 +67,13 @@ static unsigned int bf_fail;	/* simbol yang tidak ada di kernel ini */
 static const char *const bf_syms[] = {
 	"regulator_enable",
 	"regulator_disable",
-	"clk_prepare_enable",
-	"clk_disable_unprepare",
+	"clk_enable",		/* clk_prepare_enable = inline, tidak di kallsyms */
+	"clk_disable",		/* clk_disable_unprepare = inline */
 	"clk_set_rate",
 	"i2c_transfer",
 	"spi_sync",
-	"pm_runtime_get_sync",
-	"pm_runtime_put_sync",
+	"__pm_runtime_resume",	/* pm_runtime_get_sync = inline */
+	"__pm_runtime_suspend",	/* pm_runtime_put_sync = inline */
 	"driver_probe_device",
 	"driver_deferred_probe_add",
 };

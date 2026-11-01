@@ -96,10 +96,17 @@ static int __init bfkrt_init(void)
 	int ret;
 
 	ret = register_kprobe(&kln_kp);
-	if (ret == 0)
+	if (ret == 0) {
+		/* register_kprobe mengisi kln_kp.addr dengan alamat
+		 * kallsyms_lookup_name hasil resolusi symbol_name. Pre_handler
+		 * TIDAK dipakai: kprobe langsung dilepas, dan kallsyms_lookup_name
+		 * memang tidak dipanggil spontan sehingga handler takkan pernah
+		 * fire. addr dari struct kprobe-lah sumber alamat yang benar. */
+		bf_kln = (unsigned long (*)(const char *))kln_kp.addr;
 		unregister_kprobe(&kln_kp);
-	else
+	} else {
 		pr_info("berryfetcher: kallsyms_lookup_name tidak terjangkau (%d)\n", ret);
+	}
 
 	if (!proc_create_single(BFKRT_PROC_INFO, 0444, NULL, info_show)) {
 		pr_err("berryfetcher: gagal buat /proc/%s\n", BFKRT_PROC_INFO);
