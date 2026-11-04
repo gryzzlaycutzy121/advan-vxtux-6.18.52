@@ -672,27 +672,42 @@ static int sprd_iommu_probe(struct platform_device *pdev)
 	if (ret)
 		goto free_page;
 
-	ret = iommu_device_register(&sdev->iommu, &sprd_iommu_ops, dev);
-	if (ret)
-		goto remove_sysfs;
-
+	/*
+	 * Gate clock HARUS diaktifkan SEBELUM iommu_device_register().
+	 *
+	 * iommu_device_register() memanggil bus_iommu_probe() yang menemukan
+	 * client device ber-`iommus` lalu menjalankan iommu_setup_default_domain()
+	 * -> iommu_attach_device() -> .attach_dev() (sprd_iommu_ops_attach_device).
+	 * Callback itu menulis langsung ke sdev->base dengan writel_relaxed().
+	 * Komentar di sprd_iommu_clk_enable() sendiri memperingatkan bahwa akses
+	 * sebagian IOMMU dikendalikan gate clock -- menulis ke blok yang masih
+	 * digate membalas dengan bus error, dan di arm64 itu sampai sebagai
+	 * SError tak sinkron -> arm64_serror_panic() -> panic() di tengah boot.
+	 *
+	 * Urutan lama (register dulu, clock belakangan) membuat setiap client
+	 * yang sudah terpasang di DT menyentuh hardware yang belum diizinkan.
+	 */
 	ret = sprd_iommu_clk_enable(sdev);
 	if (ret)
-		goto unregister_iommu;
+		goto free_page;
+
+	ret = iommu_device_register(&sdev->iommu, &sprd_iommu_ops, dev);
+	if (ret)
+		goto disable_clk;
 
 	ret = sprd_iommu_get_version(sdev);
 	if (ret < 0) {
 		dev_err(dev, "IOMMU version(%d) is invalid.\n", ret);
-		goto disable_clk;
+		goto unregister_iommu;
 	}
 	sdev->ver = ret;
 
 	return 0;
 
-disable_clk:
-	sprd_iommu_clk_disable(sdev);
 unregister_iommu:
 	iommu_device_unregister(&sdev->iommu);
+disable_clk:
+	sprd_iommu_clk_disable(sdev);
 remove_sysfs:
 	iommu_device_sysfs_remove(&sdev->iommu);
 free_page:

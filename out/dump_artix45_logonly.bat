@@ -124,5 +124,5 @@ if exist "%PY%" (
 echo  Laporan penuh : %LOG%\analysis.txt
 echo  Transkrip spd : %LOG%\spd_dump_session.log
 echo  Untuk flash   : flash pertama kali  -^>  flash_artix45.bat
-echo                  dump + flash + reset -^>  dump_flash_artix45.bat
+echo                  (artix45 hanya menulis boot_a; vendor_boot_a tidak disentuh)
 pause

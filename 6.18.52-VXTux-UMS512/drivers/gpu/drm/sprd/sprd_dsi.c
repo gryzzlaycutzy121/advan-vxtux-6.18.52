@@ -3,6 +3,7 @@
  * Copyright (C) 2020 Unisoc Inc.
  */
 
+#include <linux/clk.h>
 #include <linux/component.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -906,6 +907,26 @@ static int sprd_dsi_context_init(struct sprd_dsi *dsi,
 	if (IS_ERR(ctx->base)) {
 		drm_err(dsi->drm, "failed to map dsi host registers\n");
 		return PTR_ERR(ctx->base);
+	}
+
+	/*
+	 * Gate clock AHB DSI (artix50) -- lihat catatan di sprd_dpu.h.
+	 *
+	 * DT stok dsi@20400000 mendeklarasikan satu clock:
+	 *
+	 *   clock-names = "clk_ap_ahb_dsi_eb";
+	 *   clocks      = <&apahb_gate CLK_DSI_EB>;
+	 *
+	 * Sama seperti DPU, driver lama tidak pernah memanggil clk API sehingga
+	 * DSI hanya hidup karena gate warisan LK.  Dengan pemanggilan ini probe
+	 * akan menunggu provider clock (karena di tablet ini SPRD_UMS512_CLK
+	 * masih modul) alih-alih mengakses blok yang masih digate.
+	 */
+	ctx->clk = devm_clk_get_optional_enabled(dev, "clk_ap_ahb_dsi_eb");
+	if (IS_ERR(ctx->clk)) {
+		dev_err(dev, "failed to enable DSI AHB clock: %ld\n",
+			PTR_ERR(ctx->clk));
+		return PTR_ERR(ctx->clk);
 	}
 
 	ctx->regmap = devm_regmap_init(dev, &regmap_tst_io, dsi, &byte_config);

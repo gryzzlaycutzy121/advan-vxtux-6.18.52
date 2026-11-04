@@ -108,7 +108,43 @@ shutil.copy2('out/dtb_artix44/ums512-1h10-vxtux.dtb', 'out/dtb_artix45/')
 print('OK out/dtb_artix45/ums512-1h10-vxtux.dtb')
 
 # 3. skrip untuk kamu (flash + dump) --------------------------------------
+# flash_artix44 menulis boot_a DAN vendor_boot_a.  artix45 hanya boot_a:
+# DT tidak berubah dan sudah terpasang sejak artix44, jadi menulis ulang 100MB
+# vendor_boot hanya menambah risiko tanpa manfaat.
 convert('out/flash_artix44.bat', 'out/flash_artix45.bat', FLASH_BODY)
+f = io.open('out/flash_artix45.bat', newline='').read()
+f = f.replace(
+    'set LOG=%OUT%logs\\vb44\r\nset BOOT=%OUT%6.18.52-VXTux-UMS512\\boot_artix45.img\r\nset VB=%LOG%\\vendor_boot_patch44.img\r\n',
+    'set LOG=%OUT%logs\\artix45\r\nset BOOT=%OUT%6.18.52-VXTux-UMS512\\boot_artix45.img\r\n')
+f = f.replace(
+    'if not exist "%VB%"   ( echo [X] vendor_boot patch tidak ada: %VB% & pause & exit /b 1 )\r\n', '')
+f = f.replace(
+    'echo  vendor_boot_a ^<-  %VB%\r\nfor %%A in ("%VB%")   do echo   ukuran : %%~zA byte\r\n', '')
+f = f.replace(
+    '  "%PY%" -c "import hashlib;p=r\'%VB%\';d=open(p,\'rb\').read();print(\'  vb  md5  :\',hashlib.md5(d).hexdigest());print(\'  vb  dtb  :\',d[0x15be040:0x15be044]==bytes.fromhex(\'d00dfeed\'))"\r\n',
+    '')
+f = f.replace('  w vendor_boot_a "%VB%" ^\r\n', '')
+f = f.replace(
+    '  echo [!] ada error -- cari "Write Part Done: boot_a" /\r\n'
+    '  echo     "Write Part Done: vendor_boot_a" di atas.\r\n',
+    '  echo [!] ada error -- cari "Write Part Done: boot_a" di atas.\r\n')
+f = f.replace(
+    '  echo [OK] boot_a + vendor_boot_a tertulis.\r\n'
+    '  echo      Di layar cari:\r\n'
+    '  echo        "VXTUX-BLDB:"            pintu debug kedua, langkah ke-N\r\n'
+    '  echo        "VXTUX-LOG: ... 10 files"  bundle log sudah ditulis\r\n'
+    '  echo        "VXTUX-DEFER[post-modules]" device yang masih tanpa driver\r\n'
+    '  echo        "storage ready after Ns"   eMMC hidup\r\n',
+    '  echo [OK] boot_a tertulis ^(vendor_boot_a tidak disentuh^).\r\n'
+    '  echo      Di layar cari, berurutan:\r\n'
+    '  echo        "VXTUX-ITRACE: kernel alive"   tracer hidup\r\n'
+    '  echo        "<nomor> <nama initcall>"       baris TERAKHIR = titik macet\r\n'
+    '  echo        "vxtux-lkfb: LK fb ... fbcon active"  konsol teks hidup\r\n'
+    '  echo        "VXTUX-STEP: 0/5 init alive"    userspace jalan\r\n'
+    '  echo        "VXTUX-SUPER: ..."              isi partisi super\r\n')
+
+io.open('out/flash_artix45.bat', 'w', newline='').write(f)
+print('OK out/flash_artix45.bat  (hanya boot_a: %d byte)' % os.path.getsize('out/flash_artix45.bat'))
 convert('out/dump_artix44_logonly.bat', 'out/dump_artix45_logonly.bat', DUMP_BODY)
 # dump_flash_artix44.bat tidak pernah ada (commit sebelumnya hanya membuat
 # flash/dump terpisah); artix45 juga cukup dua skrip itu.

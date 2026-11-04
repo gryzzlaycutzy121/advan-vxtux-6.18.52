@@ -44,6 +44,19 @@ enum {
  */
 struct dpu_context {
 	void __iomem *base;
+	/*
+	 * Gate clock AHB DISPC (artix50).
+	 *
+	 * Sebelum ini driver DPU sama sekali tidak menyentuh clock API, jadi
+	 * sprd_dpu_context_init() langsung menulis REG_DPU_INT_EN/CLR ke
+	 * 0x20300000 hanya karena LK kebetulan meninggalkan gate-nya terbuka.
+	 * Begitu ada yang menutup gate itu (atau probe berjalan sebelum clock
+	 * provider terdaftar), akses MMIO membalas bus error -> SError tak
+	 * sinkron -> arm64_serror_panic(), kelas bug yang sama dengan
+	 * sprd_iommu di artix48.  devm_clk_get_optional_enabled() membuat probe
+	 * menunggu (-EPROBE_DEFER) sampai provider clock benar-benar ada.
+	 */
+	struct clk *clk;
 	int irq;
 	u8 if_type;
 	struct videomode vm;
