@@ -12,8 +12,8 @@
 #include <generated/vdso-offsets.h>
 
 #define VDSO_SYMBOL(base, name)						   \
-({									   \
-	((void *)(unsigned long)(base)); \
+({									  \
+	(void *)(vdso_offset_##name + (unsigned long)(base)); \
 })
 
 extern char vdso_start[], vdso_end[];
