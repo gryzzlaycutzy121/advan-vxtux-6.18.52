@@ -89,12 +89,14 @@ int main(void) {
     }
     fclose(mf);
 
-    int loaded = 0, failed = 0, tainted = 0;
+    int loaded = 0, failed = 0;
     int total = n;
-    int passes = 3;
-    int *state = calloc(total, sizeof(int)); /* 0=try,1=ok,2=fail */
+    int passes = 12;
+    int *state = calloc(total, sizeof(int)); /* 0=pending,1=ok */
+    int progress = 1;
 
-    for (int pass = 0; pass < passes; pass++) {
+    for (int pass = 0; pass < passes && progress; pass++) {
+        progress = 0;
         for (int i = 0; i < total; i++) {
             if (state[i] == 1) continue;
             /* already loaded (built-in or earlier module)? */
@@ -103,25 +105,29 @@ int main(void) {
             char *dot = strrchr(base ? base : name, '.');
             if (dot) *dot = 0;
             char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
-            if (is_already(b2)) { state[i] = 1; loaded++; continue; }
+            if (is_already(b2)) { state[i] = 1; loaded++; progress++; continue; }
 
             char path[384];
             snprintf(path, sizeof path, "/modules/%s", lines[i]);
             int e = load_one(path);
             if (e == 0) {
-                state[i] = 1; loaded++;
+                state[i] = 1; loaded++; progress++;
                 serf("LOAD OK   %s\n", lines[i]);
             } else {
-                state[i] = 2; failed++;
-                serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
+                if (pass == passes - 1)
+                    serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
             }
         }
-        if (failed == 0) break;
-        /* reset failed to retry next pass */
-        failed = 0;
-        for (int i = 0; i < total; i++) if (state[i] == 2) state[i] = 0;
+        if (!progress) break; /* tidak ada lagi yang bisa dimuat */
     }
 
+    failed = 0;
+    for (int i = 0; i < total; i++) if (state[i] != 1) failed++;
+    if (failed) {
+        ser("=== FAILED LIST ===\n");
+        for (int i = 0; i < total; i++)
+            if (state[i] != 1) serf("FAILED %s\n", lines[i]);
+    }
     serf("=== SUMMARY: total=%d loaded=%d failed=%d ===\n", total, loaded, failed);
     if (failed == 0)
         ser("=== VXTUX-MODTEST-PASS ===\n");

@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-aarch64-linux-gnu flex bison bc \
-            libssl-dev libelf-dev qemu-system-arm cpio
+            libssl-dev libelf-dev qemu-system-arm cpio kmod
 
       - name: Config (device + enhanced + fragmen QEMU)
         run: |
@@ -48,15 +48,60 @@ jobs:
 
       - name: Build modules
         run: |
-          cd           6.18.52-VXTux-UMS512
+          cd 6.18.52-VXTux-UMS512
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules -j$(nproc)
           find . -name '*.ko' | sed 's#^\./##' | sort > /tmp/modules.list
           wc -l /tmp/modules.list | tee /tmp/ko_count.txt
+          echo "--- ORI parity (236) present in build? ---"
           miss=0
           while read -r m; do
             if [ ! -f "$m" ]; then echo "GAP: $m"; miss=$((miss+1)); fi
           done < ../module_load_manifest.txt
           echo "ori_gap=$miss"
+          # Urutan dependensi: modpost menulis field "depends=" di .modinfo.
+          # modinfo -F depends membacanya -> topological sort (deps lebih dulu).
+          cp /tmp/modules.list /tmp/modules.alphabetic.list
+          python3 - <<'EOFPY'
+          import os, subprocess
+          root = '6.18.52-VXTux-UMS512'
+          built = [l.strip() for l in open('/tmp/modules.alphabetic.list') if l.strip()]
+          bset = set(built)
+          deps = {}
+          for m in built:
+              p = os.path.join(root, m)
+              try:
+                  out = subprocess.run(['modinfo','-F','depends',p],
+                                       capture_output=True, text=True,
+                                       timeout=30).stdout
+              except Exception:
+                  out = ''
+              dl = []
+              for d in out.split():
+                  if d.endswith('.ko'):
+                      # deps juga ditulis relatif terhadap /lib/modules/<rel>
+                      cands = [d, d.replace('kernel/','',1)]
+                      c = next((x for x in cands if x in bset), None)
+                      if c:
+                          dl.append(c)
+              deps[m] = dl
+          order, seen, temp = [], set(), set()
+          def visit(n):
+              if n in seen or n in temp:
+                  return
+              temp.add(n)
+              for d in deps.get(n, []):
+                  visit(d)
+              temp.discard(n)
+              seen.add(n)
+              order.append(n)
+          for n in built:
+              visit(n)
+          with open('/tmp/modules.list','w') as f:
+              f.write('\n'.join(order) + '\n')
+          print('urutan dependensi: %d modul (dengan %d relasi deps)' %
+                (len(order), sum(len(v) for v in deps.values())))
+          EOFPY
+          wc -l /tmp/modules.list
 
       - name: Initramfs (modtest_init + modules + manifest)
         run: |
@@ -71,7 +116,7 @@ jobs:
           cp /tmp/modtest_init /tmp/initramfs/init
           chmod 755 /tmp/initramfs/init
           cp /tmp/modules.list /tmp/initramfs/module_load_manifest.txt
-          cd           6.18.52-VXTux-UMS512
+          cd 6.18.52-VXTux-UMS512
           while read -r m; do
             if [ -f "$m" ]; then
               mkdir -p "/tmp/initramfs/modules/$(dirname "$m")"
@@ -82,14 +127,18 @@ jobs:
           (cd /tmp/initramfs && find . | cpio -o -H newc --owner root:root | gzip -9) > /tmp/initramfs.cpio.gz
           ls -lh /tmp/initramfs.cpio.gz
           gzip -t /tmp/initramfs.cpio.gz
+          # artefak untuk iterasi lokal (download Image + modul + initramfs)
+          cp arch/arm64/boot/Image /tmp/Image
+          tar -czf /tmp/built_kos.tar.gz -C /tmp/initramfs modules
+          cp /tmp/initramfs.cpio.gz /tmp/initramfs.cpio.gz
 
       - name: Boot QEMU (module load test)
         run: |
           set +e
           timeout --signal=KILL 300 qemu-system-aarch64 \
-            -machine virt,gic-version=3,highmem=off \
+            -machine virt,gic-version=3,highmem=off,secure=on \
             -cpu cortex-a72 -smp 8 -m 2G \
-            -kernel           6.18.52-VXTux-UMS512/arch/arm64/boot/Image \
+            -kernel 6.18.52-VXTux-UMS512/arch/arm64/boot/Image \
             -initrd /tmp/initramfs.cpio.gz \
             -append "console=hvc0 rdinit=/init panic=-1 oops=panic loglevel=6" \
             -device virtio-serial-pci \
@@ -114,15 +163,19 @@ jobs:
           echo '--- qemu debug tail ---'; tail -n 20 /tmp/qemu-modtest.debug.log 2>/dev/null
           exit 1
 
-      - name: Upload serial log
+      - name: Upload serial log + Image + modul (untuk iterasi lokal)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: modtest-serial
+          name: modtest-artifacts
           path: |
             /tmp/serial-modtest.log
             /tmp/qemu-modtest-stdout.log
             /tmp/qemu-modtest.debug.log
             /tmp/modtest-init-arch.txt
             /tmp/ko_count.txt
+            /tmp/Image
+            /tmp/built_kos.tar.gz
+            /tmp/initramfs.cpio.gz
+            /tmp/modules.list
           if-no-files-found: warn
