@@ -1,0 +1,241 @@
+name: Module Load Test (QEMU)
+on:
+  workflow_dispatch:
+  push:
+    branches: [module-load-maximize]
+jobs:
+  modtest:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu flex bison bc \
+            libssl-dev libelf-dev qemu-system-arm cpio
+
+      - name: Config (device + enhanced + fragmen QEMU)
+        run: |
+          cd 6.18.52-VXTux-UMS512
+          find scripts/ -type f -exec chmod +x {} +
+          cp .config .config.device
+          sed -i 's/\r$//' .config.device ../enhanced_config.cfg arch/arm64/configs/vxtux_618_qemu.defconfig
+          scripts/kconfig/merge_config.sh -m -O . .config.device \
+            ../enhanced_config.cfg arch/arm64/configs/vxtux_618_qemu.defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          rc=0
+          for s in CONFIG_VIRTIO=y CONFIG_VIRTIO_PCI=y CONFIG_VIRTIO_CONSOLE=y \
+                   CONFIG_BLK_DEV_INITRD=y CONFIG_RD_GZIP=y CONFIG_BINFMT_SCRIPT=y \
+                   CONFIG_DEVTMPFS=y CONFIG_ARCH_SPRD=y CONFIG_ARM_GIC_V3=y; do
+            if ! grep -qx "$s" .config; then
+              echo "::error::HILANG setelah olddefconfig: $s"
+              rc=1
+            fi
+          done
+          exit $rc
+
+      - name: Build Image
+        run: |
+          cd 6.18.52-VXTux-UMS512
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) Image
+          ls -l arch/arm64/boot/Image
+
+      - name: Build modules
+        run: |
+          cd 6.18.52-VXTux-UMS512
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules -j$(nproc)
+          # Manifest = daftar .ko yang BENAR-BENAR dibangun (garansi cocok).
+          find . -name '*.ko' | sed 's#^\./##' | sort > /tmp/modules.list
+          wc -l /tmp/modules.list | tee /tmp/ko_count.txt
+          echo "--- ORI parity (236) present in build? ---"
+          miss=0
+          while read -r m; do
+            if [ ! -f "$m" ]; then echo "GAP: $m"; miss=$((miss+1)); fi
+          done < ../module_load_manifest.txt
+          echo "ori_gap=$miss"
+
+      - name: Initramfs (modtest_init + modules + manifest)
+        run: |
+          set -e
+          mkdir -p /tmp/src
+          cat > /tmp/src/modtest_init.c <<'EOFC'
+#define _GNU_SOURCE
+#include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/klog.h>
+#include <sys/mount.h>
+#include <sys/reboot.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/utsname.h>
+#include <unistd.h>
+#ifndef SYS_init_module
+#define SYS_init_module 175
+#endif
+#ifndef SYS_finit_module
+#define SYS_finit_module 273
+#endif
+static int tfd = -1;
+static void ser(const char *s) {
+    if (tfd >= 0) { write(tfd, s, strlen(s)); }
+    int k = open("/dev/kmsg", O_WRONLY | O_NOCTTY);
+    if (k >= 0) { write(k, s, strlen(s)); close(k); }
+}
+static void serf(const char *fmt, ...) {
+    char b[512]; va_list ap; va_start(ap, fmt);
+    vsnprintf(b, sizeof b, fmt, ap); va_end(ap); ser(b);
+}
+static int load_one(const char *path) {
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) return -errno;
+    long rc = syscall(SYS_finit_module, fd, "", 0);
+    int e = (int)rc;
+    if (rc < 0) e = -errno;
+    close(fd);
+    return e;
+}
+static int is_already(const char *name) {
+    char p[256];
+    snprintf(p, sizeof p, "/sys/module/%s", name);
+    struct stat st;
+    return stat(p, &st) == 0;
+}
+int main(void) {
+    tfd = open("/dev/hvc0", O_WRONLY | O_NOCTTY);
+    if (tfd < 0) tfd = open("/dev/console", O_WRONLY | O_NOCTTY);
+    ser("=== VXTUX-MODTEST-INIT ===\n");
+    struct utsname u; uname(&u);
+    serf("kernel: %s %s\n", u.release, u.version);
+    mkdir("/proc", 0755); mkdir("/sys", 0755); mkdir("/dev", 0755);
+    mount("proc", "/proc", "proc", 0, 0);
+    mount("sysfs", "/sys", "sysfs", 0, 0);
+    mount("devtmpfs", "/dev", "devtmpfs", 0, 0);
+    FILE *mf = fopen("/module_load_manifest.txt", "r");
+    if (!mf) {
+        ser("FATAL: no /module_load_manifest.txt\n");
+        sync(); reboot(RB_POWER_OFF); return 1;
+    }
+    char lines[512][300];
+    int n = 0;
+    while (n < 512 && fgets(lines[n], 300, mf)) {
+        size_t l = strlen(lines[n]);
+        while (l && (lines[n][l-1] == '\n' || lines[n][l-1] == '\r')) lines[n][--l] = 0;
+        if (l) n++;
+    }
+    fclose(mf);
+    int loaded = 0, failed = 0;
+    int total = n;
+    int passes = 3;
+    int *state = calloc(total, sizeof(int));
+    for (int pass = 0; pass < passes; pass++) {
+        for (int i = 0; i < total; i++) {
+            if (state[i] == 1) continue;
+            char name[300]; strcpy(name, lines[i]);
+            char *base = strrchr(name, '/');
+            char *dot = strrchr(base ? base : name, '.');
+            if (dot) *dot = 0;
+            char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
+            if (is_already(b2)) { state[i] = 1; loaded++; continue; }
+            char path[384];
+            snprintf(path, sizeof path, "/modules/%s", lines[i]);
+            int e = load_one(path);
+            if (e == 0) {
+                state[i] = 1; loaded++;
+                serf("LOAD OK   %s\n", lines[i]);
+            } else {
+                state[i] = 2; failed++;
+                serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
+            }
+        }
+        if (failed == 0) break;
+        failed = 0;
+        for (int i = 0; i < total; i++) if (state[i] == 2) state[i] = 0;
+    }
+    serf("=== SUMMARY: total=%d loaded=%d failed=%d ===\n", total, loaded, failed);
+    if (failed == 0)
+        ser("=== VXTUX-MODTEST-PASS ===\n");
+    else
+        ser("=== VXTUX-MODTEST-FAIL ===\n");
+    ser("=== VXTUX-MODTEST-DONE ===\n");
+    sync();
+    reboot(RB_POWER_OFF);
+    return failed == 0 ? 0 : 1;
+}
+EOFC
+          aarch64-linux-gnu-gcc -static -O2 -march=armv8-a -mabi=lp64 \
+            -o /tmp/modtest_init /tmp/src/modtest_init.c
+          file /tmp/modtest_init | tee /tmp/modtest-init-arch.txt
+          file /tmp/modtest_init | grep -q 'ARM aarch64' || \
+            { echo "::error::modtest_init bukan aarch64"; exit 1; }
+
+          rm -rf /tmp/initramfs
+          mkdir -p /tmp/initramfs/proc /tmp/initramfs/sys /tmp/initramfs/dev /tmp/initramfs/modules
+          cp /tmp/modtest_init /tmp/initramfs/init
+          chmod 755 /tmp/initramfs/init
+          cp /tmp/modules.list /tmp/initramfs/module_load_manifest.txt
+          cd 6.18.52-VXTux-UMS512
+          while read -r m; do
+            if [ -f "$m" ]; then
+              mkdir -p "/tmp/initramfs/modules/$(dirname "$m")"
+              cp "$m" "/tmp/initramfs/modules/$m"
+            fi
+          done < /tmp/modules.list
+          echo "ko in initramfs: $(find /tmp/initramfs/modules -name '*.ko' | wc -l)"
+          (cd /tmp/initramfs && find . | cpio -o -H newc --owner root:root | gzip -9) > /tmp/initramfs.cpio.gz
+          ls -lh /tmp/initramfs.cpio.gz
+          gzip -t /tmp/initramfs.cpio.gz
+
+      - name: Boot QEMU (module load test)
+        run: |
+          set +e
+          timeout --signal=KILL 300 qemu-system-aarch64 \
+            -machine virt,gic-version=3,highmem=off \
+            -cpu cortex-a72 -smp 8 -m 2G \
+            -kernel 6.18.52-VXTux-UMS512/arch/arm64/boot/Image \
+            -initrd /tmp/initramfs.cpio.gz \
+            -append "console=hvc0 rdinit=/init panic=-1 oops=panic loglevel=6" \
+            -device virtio-serial-pci \
+            -device virtconsole,chardev=vc0 \
+            -chardev stdio,id=vc0,signal=off,logfile=/tmp/serial-modtest.log \
+            -display none -monitor none -no-reboot \
+            -d guest_errors,unimp,cpu_reset -D /tmp/qemu-modtest.debug.log \
+            > /tmp/qemu-modtest-stdout.log 2>&1
+          echo "qemu exit=$?"
+          echo "serial bytes: $(wc -c < /tmp/serial-modtest.log 2>/dev/null)"
+          echo "--- tail serial ---"
+          tail -n 40 /tmp/serial-modtest.log 2>/dev/null
+
+          ok=0
+          grep -q 'VXTUX-MODTEST-PASS' /tmp/serial-modtest.log && ok=1
+          echo "marker pass=$ok"
+          grep -E 'SUMMARY|LOAD FAIL|FATAL|Kernel panic' /tmp/serial-modtest.log | tail -n 60
+          if [ "$ok" = 1 ]; then
+            echo "MODULE LOAD TEST PASS"
+            exit 0
+          fi
+          echo '::error::module load test belum pass — lihat log di atas'
+          echo '--- qemu debug tail ---'; tail -n 20 /tmp/qemu-modtest.debug.log 2>/dev/null
+          exit 1
+
+      - name: Upload serial log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modtest-serial
+          path: |
+            /tmp/serial-modtest.log
+            /tmp/qemu-modtest-stdout.log
+            /tmp/qemu-modtest.debug.log
+            /tmp/modtest-init-arch.txt
+            /tmp/ko_count.txt
+          if-no-files-found: warn
