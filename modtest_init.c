@@ -71,15 +71,16 @@ static int is_already(const char *name) {
  * sprd_pdbg) dan trusty-pm TIDAK lagi di-skip: QEMU kini boot lewat TF-A BL31
  * (EL3 nyata) yang membalas SMC_UNK, sehingga init SMC tidak menggantung dan
  * semua modul itu load. WCN core/integ/platform/sipc/wlan kini built-in (=y)
- * jadi tidak lagi muncul di daftar modul. */
+ * jadi tidak lagi muncul di daftar modul.
+ *
+ * TICK14: sprdbt_tty & sprd_fm TIDAK lagi di-skip. Keduanya platform_driver
+ * (of_match "sprd,mtty" / "sprd,marlin3_fm") yang tak match DT QEMU virt,
+ * sehingga probe tidak jalan dan init hanya mendaftarkan driver -- aman
+ * walau tanpa chip WCN nyata. */
 static const char *qemu_unsupported(const char *base) {
     /* butuh secure world Trusty (TIPC endpoint) -- tak ada di QEMU */
     static const char *trusty[] = {
         "ion_ipc_trusty",
-    };
-    /* WCN BT/FM: butuh chip WCN nyata (SDIO/UART ke SC23xx) */
-    static const char *wcn[] = {
-        "sprdbt_tty", "sprd_fm",
     };
     /* butuh modem/CP via SIPC (jadwal kerja async menabrak tanpa CP) */
     static const char *modem[] = {
@@ -87,8 +88,6 @@ static const char *qemu_unsupported(const char *base) {
     };
     for (unsigned i = 0; i < sizeof trusty / sizeof trusty[0]; i++)
         if (strcmp(base, trusty[i]) == 0) return "butuh secure world Trusty";
-    for (unsigned i = 0; i < sizeof wcn / sizeof wcn[0]; i++)
-        if (strcmp(base, wcn[i]) == 0) return "WCN: butuh chip WCN";
     for (unsigned i = 0; i < sizeof modem / sizeof modem[0]; i++)
         if (strcmp(base, modem[i]) == 0) return "butuh modem/CP via SIPC";
     return NULL;
