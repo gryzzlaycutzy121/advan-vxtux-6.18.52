@@ -34,9 +34,9 @@ static int wcn_open_module;
 static int wcn_module_state_change;
 /* format: marlin2-built-in_id0_id1 */
 static char wcn_chip_name[40];
-char functionmask[8];
-marlin_reset_callback marlin_reset_func;
-void *marlin_callback_para;
+char functionmask_integ[8];
+marlin_reset_callback marlin_reset_func_integ;
+void *marlin_callback_para_integ;
 struct platform_chip_id g_platform_chip_id;
 static u32 g_platform_chip_type;
 static const struct wcn_chip_type wcn_chip_type[] = {
@@ -353,8 +353,8 @@ int wcn_get_btwf_power_status(void)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int marlin_get_power(void);
-int marlin_get_power(void)
+int marlin_get_power_integ(void);
+int marlin_get_power_integ(void)
 {
 	if (s_wcn_device.gnss_device &&
 	    s_wcn_device.gnss_device->power_state)
@@ -426,15 +426,15 @@ void wcn_set_download_status(bool status)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-enum wcn_clock_type wcn_get_xtal_26m_clk_type(void);
-enum wcn_clock_type wcn_get_xtal_26m_clk_type(void)
+enum wcn_clock_type wcn_get_xtal_26m_clk_type_integ(void);
+enum wcn_clock_type wcn_get_xtal_26m_clk_type_integ(void)
 {
 	return s_wcn_device.clk_xtal_26m.type;
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-enum wcn_clock_mode wcn_get_xtal_26m_clk_mode(void);
-enum wcn_clock_mode wcn_get_xtal_26m_clk_mode(void)
+enum wcn_clock_mode wcn_get_xtal_26m_clk_mode_integ(void);
+enum wcn_clock_mode wcn_get_xtal_26m_clk_mode_integ(void)
 {
 	return s_wcn_device.clk_xtal_26m.mode;
 }
@@ -450,40 +450,40 @@ void gnss_set_boot_status(u32 status)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int wcn_get_module_status_changed(void);
-int wcn_get_module_status_changed(void)
+int wcn_get_module_status_changed_integ(void);
+int wcn_get_module_status_changed_integ(void)
 {
 	return wcn_module_state_change;
 }
 
-void wcn_set_module_status_changed(bool status)
+void wcn_set_module_status_changed_integ(bool status)
 {
 	wcn_module_state_change = status;
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int marlin_get_module_status(void);
-int marlin_get_module_status(void)
+int marlin_get_module_status_integ(void);
+int marlin_get_module_status_integ(void)
 {
 	return wcn_open_module;
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int marlin_reset_register_notify(void *callback_func, void *para);
-int marlin_reset_register_notify(void *callback_func, void *para)
+int marlin_reset_register_notify_integ(void *callback_func, void *para);
+int marlin_reset_register_notify_integ(void *callback_func, void *para)
 {
-	marlin_reset_func = (marlin_reset_callback)callback_func;
-	marlin_callback_para = para;
+	marlin_reset_func_integ = (marlin_reset_callback)callback_func;
+	marlin_callback_para_integ = para;
 
 	return 0;
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int marlin_reset_unregister_notify(void);
-int marlin_reset_unregister_notify(void)
+int marlin_reset_unregister_notify_integ(void);
+int marlin_reset_unregister_notify_integ(void)
 {
-	marlin_reset_func = NULL;
-	marlin_callback_para = NULL;
+	marlin_reset_func_integ = NULL;
+	marlin_callback_para_integ = NULL;
 
 	return 0;
 }
@@ -500,7 +500,7 @@ void wcn_set_module_state(bool status)
 
 void wcn_set_loopcheck_state(bool status)
 {
-	wcn_set_module_status_changed(true);
+	wcn_set_module_status_changed_integ(true);
 	if (status) {
 		loopcheck_ready_set();
 		start_loopcheck();
@@ -1379,8 +1379,8 @@ u32 wcn_parse_platform_chip_id(struct wcn_device *wcn_dev)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-const char *wcn_get_chip_name(void);
-const char *wcn_get_chip_name(void)
+const char *wcn_get_chip_name_integ(void);
+const char *wcn_get_chip_name_integ(void)
 {
 	if (wcn_platform_chip_type() != WCN_PLATFORM_TYPE_QOGIRL6) {
 		snprintf(wcn_chip_name, sizeof(wcn_chip_name),

@@ -826,7 +826,7 @@
 			};
 		};
 
-		apb@70000000 {
+		apb_bus: apb@70000000 {
 			compatible = "simple-bus";
 			#address-cells = <1>;
 			#size-cells = <1>;

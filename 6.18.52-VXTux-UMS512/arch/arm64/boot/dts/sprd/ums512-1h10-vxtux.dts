@@ -290,6 +290,63 @@
  * cocok dengan compatible sc9860-eic-{sync,async,latch,debounce}.
  * ============================================================ */
 &aon {
+	/* DT parity (stock): /soc/aon/apcpu-dvfs compatible "sprd,cpufreq-v2".
+	 * Probe-gating untuk drivers/cpufreq/sprd-cpufreq-v2-driver.c
+	 * (sprd-cpufreq-v2.ko, module-backed, ada di set 236 .ko). */
+	apcpu_dvfs: apcpu-dvfs {
+		compatible = "sprd,cpufreq-v2";
+	};
+
+	/* DT parity (stock): /soc/aon/topdvfsctrl@322a0000.
+	 * Probe-gating sprd-top-dvfs.ko. phandle stock 0x0c -> aon_apb_regs
+	 * (syscon@327d0000), 0x0b -> top_dvfs_apb_regs (syscon@322a0000),
+	 * keduanya sudah ada di ums512.dtsi. reg relatif (base aon 0x32000000):
+	 * 0x322a0000 - 0x32000000 = 0x2a0000. */
+	topdvfsctrl: topdvfsctrl@2a0000 {
+		compatible = "sprd,sharkl5pro-topdvfs-dev", "sprd,topdvfs-dev", "syscon";
+		sprd,syscon-enable = <&aon_apb_regs>;
+		module-enable-cfg = <0x04 0x07>;
+		reg = <0x2a0000 0x8000>;
+		sprd,topdvfs-sysctrl = <&top_dvfs_apb_regs>;
+		device-dcdc-cells = <&dcdc_mm>, <&dcdc_modem>;
+
+		dcdc_mm: dcdc-mm {
+			dcdc-dvfs-enable = <0x18 0x14 0x01>;
+			dcdc-judge-vol-sw = <0x18 0x01 0x07 0x02>;
+			dcdc-subsys-cells = <&dcdc_audcp_sys>, <&dcdc_gpu_sys>, <&dcdc_mm_sys>;
+
+			dcdc_audcp_sys: audcp-sys {
+				dcdc-subsys-tune-enable = <0x150 0x05 0x00>;
+			};
+
+			dcdc_gpu_sys: gpu-sys {
+				dcdc-subsys-tune-enable = <0x150 0x01 0x01>;
+			};
+
+			dcdc_mm_sys: mm-sys {
+				dcdc-subsys-tune-enable = <0x150 0x02 0x00>;
+			};
+		};
+
+		dcdc_modem: dcdc-modem {
+			dcdc-dvfs-enable = <0x3c 0x14 0x01>;
+			dcdc-judge-vol-sw = <0x3c 0x01 0x07 0x02>;
+			dcdc-subsys-cells = <&dcdc_pubcp_sys>, <&dcdc_wtlcp_sys>, <&dcdc_ap_sys>;
+
+			dcdc_pubcp_sys: pubcp-sys {
+				dcdc-subsys-tune-enable = <0x150 0x04 0x00>;
+			};
+
+			dcdc_wtlcp_sys: wtlcp-sys {
+				dcdc-subsys-tune-enable = <0x150 0x03 0x00>;
+			};
+
+			dcdc_ap_sys: ap-sys {
+				dcdc-subsys-tune-enable = <0x150 0x00 0x01>;
+			};
+		};
+	};
+
 	eic_debounce: gpio@20000 {
 		compatible = "sprd,sharkl5pro-eic-debounce", "sprd,sc9860-eic-debounce";
 		reg = <0x20000 0x80>, <0x110000 0x80>, <0x314000 0x80>, <0x340000 0x80>;
@@ -1966,6 +2023,22 @@ gpu_opp_table: opp-table {
  * ============================================================ */
 
 &soc {
+	/* DT parity (stock): /soc/time_sync compatible "sprd,time-sync".
+	 * Probe-gating sprd_time_sync.ko (35 modul vxtux). */
+	time_sync: time_sync {
+		compatible = "sprd,time-sync";
+	};
+
+	/* DT parity (stock): /soc/apb@70000000/apsys-dvfs@1700000.
+	 * Probe-gating apsys-dvfs.ko (devfreq/sprd/apsys). Reg absolute
+	 * (0x70000000+0x1700000); stock memakai relative reg <0x1700000>. */
+	apsys_dvfs: apsys-dvfs@7170000 {
+		compatible = "sprd,hwdvfs-apsys-sharkl5pro";
+		reg = <0 0x7170000 0 0x15c>;
+		sprd,ap-dvfs-up-window = <0x40>;
+		sprd,ap-dvfs-down-window = <0x80>;
+	};
+
 	/* Camera IOMMUs */
 	iommu_isp: iommu@620ff000 {
 		compatible = "sprd,iommuvau-isp";
@@ -2119,6 +2192,19 @@ gpu_opp_table: opp-table {
 	 * TANPA iommus: sprd-iommu hanya match "sprd,iommu-v1"; node stock
 	 * "unisoc,iommuvaul5p-vsp" tak akan bind. Driver toleran
 	 * (iommu_exist_flag=0, jalur non-IOMMU). */
+	/* DT parity (stock): /soc/ap-ahb/dma-controller@20000000.
+	 * Probe-gating untuk drivers/dma/sprd-dma.c (built-in) yang dipakai
+	 * sprd-dmaengine-pcm.ko (modul, set 236). Reg/irq/clk dari stock DTB. */
+	dma-controller@20000000 {
+		compatible = "sprd,sharkl5pro-dma", "sprd,sc9860-dma";
+		reg = <0 0x20000000 0 0x4000>;
+		interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
+		#dma-cells = <1>;
+		#dma-channels = <28>;
+		clock-names = "enable";
+		clocks = <&apahb_gate 4>;
+	};
+
 	vsp: video-codec@20500000 {
 		compatible = "sprd,sharkl5pro-vsp";
 		/* &soc #address/#size-cells = <2>: 4 reg cells. */
@@ -2652,6 +2738,14 @@ gpu_opp_table: opp-table {
 			linux,cma-default;
 		};
 
+		/* DT parity (stock): /reserved-memory/iq-mem@90000000.
+		 * Probe-gating sprd_iq.ko (sprd,iq node memakai sprd,region=<&iq_mem>).
+		 * Tanpa no-map seperti stock: region tetap terpetakan. */
+		iq_mem: iq-mem@90000000 {
+			compatible = "sprd,iq-mem";
+			reg = <0 0x90000000 0 0x04000000>;
+		};
+
 		/*
 		 * TOS shared memory (dipakai `sprd,tshm` di dalam node /trusty).
 		 * Nilai dari DT stok: /reserved-memory/sh-mem@b6000000
@@ -2707,6 +2801,14 @@ gpu_opp_table: opp-table {
 			reg = <0 0xfff70000 0 0x00010000>;
 			no-map;
 		};
+	};
+
+	/* DT parity (stock): /sprd-iq compatible "sprd,iq".
+	 * Probe-gating sprd_iq.ko; sprd,region menunjuk &iq_mem (reserved-memory). */
+	sprd_iq: sprd-iq {
+		compatible = "sprd,iq";
+		sprd,region = <&iq_mem>;
+		sprd,mapping-offs = <0>;
 	};
 };
 

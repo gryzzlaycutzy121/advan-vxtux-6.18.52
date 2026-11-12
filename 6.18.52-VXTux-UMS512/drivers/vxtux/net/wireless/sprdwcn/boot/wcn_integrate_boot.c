@@ -35,7 +35,7 @@ static char gnss_firmware_parent_path[FIRMWARE_FILEPATHNAME_LENGTH_MAX];
 static char firmware_file_name[FIRMWARE_FILEPATHNAME_LENGTH_MAX];
 static char firmware_file_path[FIRMWARE_FILEPATHNAME_LENGTH_MAX];
 
-struct sprdwcn_gnss_ops *gnss_ops;
+struct sprdwcn_gnss_ops *gnss_ops_integ;
 
 void wcn_boot_init(void)
 {
@@ -58,9 +58,11 @@ void wcn_device_poweroff(void)
 	WCN_INFO("all subsys power off finish!\n");
 }
 
+void wcn_chip_power_off_integ(void);
+
 static void wcn_assert_to_reset_mdbg(void)
 {
-	wcn_chip_power_off();
+	wcn_chip_power_off_integ();
 }
 
 static int wcn_sys_chip_reset(struct notifier_block *this, unsigned long ev, void *ptr)
@@ -91,7 +93,7 @@ int wcn_reset_mdbg_notifier_deinit(void)
 	return 0;
 }
 
-void wcn_chip_power_off(void)
+void wcn_chip_power_off_integ(void)
 {
 	if (wcn_platform_chip_type() == WCN_PLATFORM_TYPE_QOGIRL6) {
 		sprdwcn_bus_set_carddump_status(true);
@@ -299,8 +301,8 @@ read_retry:
 		WCN_INFO("download image may erro!!\n");
 
 	wcn_image_buffer = data;
-	if (wcn_dev_is_gnss(wcn_dev) && gnss_ops && gnss_ops->file_judge) {
-		ret = gnss_ops->file_judge(wcn_image_buffer,
+	if (wcn_dev_is_gnss(wcn_dev) && gnss_ops_integ && gnss_ops_integ->file_judge) {
+		ret = gnss_ops_integ->file_judge(wcn_image_buffer,
 					   s_wcn_device.gnss_type);
 		if (ret == 1) {
 			vfree(wcn_image_buffer);
@@ -2980,21 +2982,21 @@ static void wcn_set_nognss(u32 val)
 	}
 }
 
-int wcn_gnss_ops_register(struct sprdwcn_gnss_ops *ops)
+int wcn_gnss_ops_register_integ(struct sprdwcn_gnss_ops *ops)
 {
-	if (gnss_ops) {
+	if (gnss_ops_integ) {
 		WARN_ON(1);
 		return -EBUSY;
 	}
 
-	gnss_ops = ops;
+	gnss_ops_integ = ops;
 
 	return 0;
 }
 
-void wcn_gnss_ops_unregister(void)
+void wcn_gnss_ops_unregister_integ(void)
 {
-	gnss_ops = NULL;
+	gnss_ops_integ = NULL;
 }
 
 static struct wcn_device *wcn_get_dev_by_type(u32 subsys_bit)
@@ -3221,8 +3223,8 @@ int start_integrate_wcn(u32 subsys)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int start_marlin(u32 subsys);
-int start_marlin(u32 subsys)
+int start_marlin_integ(u32 subsys);
+int start_marlin_integ(u32 subsys)
 {
 	return start_integrate_wcn(subsys);
 }
@@ -3579,8 +3581,8 @@ int stop_integrate_wcn(u32 subsys)
 }
 
 /* deklarasi provider (dibuat tools/re/fix_provider_proto.py; menutup -Wmissing-prototypes) */
-int stop_marlin(u32 subsys);
-int stop_marlin(u32 subsys)
+int stop_marlin_integ(u32 subsys);
+int stop_marlin_integ(u32 subsys)
 {
 	return stop_integrate_wcn(subsys);
 }

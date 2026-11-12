@@ -396,6 +396,11 @@ static const struct of_device_id sprd_topdvfs_dev_of_match[] = {
 	{ .compatible = "sprd,sharkl5pro-topdvfs"},
 	{ .compatible = "sprd,orca-topdvfs"},
 	{ .compatible = "sprd,qogirl6-topdvfs"},
+	/* DT parity: stock memakai "sprd,sharkl5pro-topdvfs-dev" (lihat
+	 * stock.dtb /soc/aon/topdvfsctrl@322a0000); tambahkan agar node stok
+	 * ter-bind oleh driver port ini. */
+	{ .compatible = "sprd,sharkl5pro-topdvfs-dev"},
+	{ .compatible = "sprd,topdvfs-dev"},
 	{},
 };
 
