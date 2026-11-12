@@ -69,16 +69,18 @@ jobs:
           echo "--- ORI parity (236) present in build? ---"
           # WCN core/integ/platform/sipc/wlan sengaja BUILT-IN (=y): tidak muncul
           # sebagai .ko. Jangan dihitung GAP; verifikasi lewat System.map.
-          BUILTIN_MODULES="drivers/vxtux/net/wireless/sprdwcn/platform/wcn_core.ko
-drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate.ko
-drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_boot.ko
-drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_dev.ko
-drivers/vxtux/net/wireless/sprdwcn/sipc/wcn_sipc.ko
-drivers/vxtux/net/wireless/sprdwcn/wlan/sprdwl.ko"
+          BUILTIN_MODULES=(
+            "drivers/vxtux/net/wireless/sprdwcn/platform/wcn_core.ko"
+            "drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate.ko"
+            "drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_boot.ko"
+            "drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_dev.ko"
+            "drivers/vxtux/net/wireless/sprdwcn/sipc/wcn_sipc.ko"
+            "drivers/vxtux/net/wireless/sprdwcn/wlan/sprdwl.ko"
+          )
           miss=0; builtin=0
           while read -r m; do
             if [ ! -f "$m" ]; then
-              if echo "$BUILTIN_MODULES" | grep -qxF "$m"; then
+              if printf '%s\n' "${BUILTIN_MODULES[@]}" | grep -qxF "$m"; then
                 echo "BUILT-IN(by design): $m"; builtin=$((builtin+1))
               else
                 echo "GAP: $m"; miss=$((miss+1))
