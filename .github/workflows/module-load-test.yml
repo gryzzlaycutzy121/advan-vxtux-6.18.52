@@ -66,6 +66,11 @@ jobs:
           root = '6.18.52-VXTux-UMS512'
           built = [l.strip() for l in open('/tmp/modules.alphabetic.list') if l.strip()]
           bset = set(built)
+          # peta nama modul (basename tanpa .ko) -> path, untuk resolusi depends
+          name2path = {}
+          for m in built:
+              base = os.path.basename(m)[:-3]
+              name2path[base] = m
           deps = {}
           for m in built:
               p = os.path.join(root, m)
@@ -76,13 +81,15 @@ jobs:
               except Exception:
                   out = ''
               dl = []
-              for d in out.split():
+              for d in out.split(','):
+                  d = d.strip()
+                  if not d:
+                      continue
                   if d.endswith('.ko'):
-                      # deps juga ditulis relatif terhadap /lib/modules/<rel>
-                      cands = [d, d.replace('kernel/','',1)]
-                      c = next((x for x in cands if x in bset), None)
-                      if c:
-                          dl.append(c)
+                      d = d[:-3]
+                  d = os.path.basename(d)
+                  if d in name2path:
+                      dl.append(name2path[d])
               deps[m] = dl
           order, seen, temp = [], set(), set()
           def visit(n):
@@ -130,7 +137,6 @@ jobs:
           # artefak untuk iterasi lokal (download Image + modul + initramfs)
           cp arch/arm64/boot/Image /tmp/Image
           tar -czf /tmp/built_kos.tar.gz -C /tmp/initramfs modules
-          cp /tmp/initramfs.cpio.gz /tmp/initramfs.cpio.gz
 
       - name: Boot QEMU (module load test)
         run: |

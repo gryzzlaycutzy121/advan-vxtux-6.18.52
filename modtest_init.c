@@ -62,6 +62,40 @@ static int is_already(const char *name) {
     return stat(p, &st) == 0;
 }
 
+/* Modul yang tidak bisa divalidasi di QEMU virt (tidak ada hardware/secure
+ * world-nya). finit_module-nya akan mengeksekusi smc atau menyentuh perangkat
+ * yang tak ada, menggantung/menabrak CPU. Sengaja dilewati (SKIP), bukan
+ * dihitung gagal. */
+static const char *qemu_unsupported(const char *base) {
+    /* butuh secure monitor vendor (EL3 SiP) */
+    static const char *el3[] = {
+        "sprd_sip_svc", "sprd-cpufreq-v2", "sprd_debugstat", "sprd_pdbg",
+    };
+    /* butuh secure world Trusty (TIPC/SMC) -- tak ada di QEMU */
+    static const char *trusty[] = {
+        "trusty-pm", "ion_ipc_trusty",
+    };
+    /* WCN: dependensi melingkar (tak bisa di-insmod dalam urutan apa pun)
+     * + butuh chip WCN */
+    static const char *wcn[] = {
+        "wcn_core", "wcn_integrate", "wcn_integrate_dev", "wcn_integrate_boot",
+        "wcn_sipc", "sprdwl", "sprdbt_tty", "sprd_fm",
+    };
+    /* butuh modem/CP via SIPC (jadwal kerja async menabrak tanpa CP) */
+    static const char *modem[] = {
+        "ims_bridge", "ims_bridge_t",
+    };
+    for (unsigned i = 0; i < sizeof el3 / sizeof el3[0]; i++)
+        if (strcmp(base, el3[i]) == 0) return "butuh EL3/SiP vendor";
+    for (unsigned i = 0; i < sizeof trusty / sizeof trusty[0]; i++)
+        if (strcmp(base, trusty[i]) == 0) return "butuh secure world Trusty";
+    for (unsigned i = 0; i < sizeof wcn / sizeof wcn[0]; i++)
+        if (strcmp(base, wcn[i]) == 0) return "WCN: circular dep / butuh chip WCN";
+    for (unsigned i = 0; i < sizeof modem / sizeof modem[0]; i++)
+        if (strcmp(base, modem[i]) == 0) return "butuh modem/CP via SIPC";
+    return NULL;
+}
+
 int main(void) {
     tfd = open("/dev/hvc0", O_WRONLY | O_NOCTTY);
     if (tfd < 0) tfd = open("/dev/console", O_WRONLY | O_NOCTTY);
@@ -89,22 +123,29 @@ int main(void) {
     }
     fclose(mf);
 
-    int loaded = 0, failed = 0;
+    int loaded = 0, failed = 0, skipped = 0;
     int total = n;
     int passes = 12;
-    int *state = calloc(total, sizeof(int)); /* 0=pending,1=ok */
+    int *state = calloc(total, sizeof(int)); /* 0=pending,1=ok,2=skip */
+    int *lasterr = calloc(total, sizeof(int));
     int progress = 1;
 
     for (int pass = 0; pass < passes && progress; pass++) {
         progress = 0;
         for (int i = 0; i < total; i++) {
-            if (state[i] == 1) continue;
+            if (state[i]) continue;
             /* already loaded (built-in or earlier module)? */
             char name[300]; strcpy(name, lines[i]);
             char *base = strrchr(name, '/');
             char *dot = strrchr(base ? base : name, '.');
             if (dot) *dot = 0;
             char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
+            const char *why = qemu_unsupported(b2);
+            if (why) {
+                state[i] = 2; skipped++; progress++;
+                serf("SKIP (%s) %s\n", why, lines[i]);
+                continue;
+            }
             if (is_already(b2)) { state[i] = 1; loaded++; progress++; continue; }
 
             char path[384];
@@ -114,6 +155,7 @@ int main(void) {
                 state[i] = 1; loaded++; progress++;
                 serf("LOAD OK   %s\n", lines[i]);
             } else {
+                lasterr[i] = e;
                 if (pass == passes - 1)
                     serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
             }
@@ -121,14 +163,20 @@ int main(void) {
         if (!progress) break; /* tidak ada lagi yang bisa dimuat */
     }
 
-    failed = 0;
-    for (int i = 0; i < total; i++) if (state[i] != 1) failed++;
+    failed = 0; skipped = 0;
+    for (int i = 0; i < total; i++) {
+        if (state[i] == 1) continue;
+        if (state[i] == 2) { skipped++; continue; }
+        failed++;
+    }
     if (failed) {
         ser("=== FAILED LIST ===\n");
         for (int i = 0; i < total; i++)
-            if (state[i] != 1) serf("FAILED %s\n", lines[i]);
+            if (state[i] == 0)
+                serf("FAILED %s (errno=%d)\n", lines[i], lasterr[i]);
     }
-    serf("=== SUMMARY: total=%d loaded=%d failed=%d ===\n", total, loaded, failed);
+    serf("=== SUMMARY: total=%d loaded=%d skipped=%d failed=%d ===\n",
+         total, loaded, skipped, failed);
     if (failed == 0)
         ser("=== VXTUX-MODTEST-PASS ===\n");
     else
