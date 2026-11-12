@@ -251,3 +251,15 @@ jobs:
           name: qemu-bfkrt-serial
           path: /tmp/serial-bfkrt.log
           if-no-files-found: warn
+
+      # Artefak untuk uji ulang di lkvm (kvmtool/KVM di device): Image + initramfs
+      # yang sama persis dengan yang di-boot QEMU di atas (memuat 3 .ko BFKRT).
+      - name: Upload Image + initramfs (untuk lkvm)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfkrt-lkvm
+          path: |
+            6.18.52-VXTux-UMS512/arch/arm64/boot/Image
+            /tmp/initramfs.cpio.gz
+          if-no-files-found: warn
