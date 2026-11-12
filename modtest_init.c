@@ -65,32 +65,30 @@ static int is_already(const char *name) {
 /* Modul yang tidak bisa divalidasi di QEMU virt (tidak ada hardware/secure
  * world-nya). finit_module-nya akan mengeksekusi smc atau menyentuh perangkat
  * yang tak ada, menggantung/menabrak CPU. Sengaja dilewati (SKIP), bukan
- * dihitung gagal. */
+ * dihitung gagal.
+ *
+ * TICK13: modul EL3/SiP (sprd_sip_svc, sprd-cpufreq-v2, sprd_debugstat,
+ * sprd_pdbg) dan trusty-pm TIDAK lagi di-skip: QEMU kini boot lewat TF-A BL31
+ * (EL3 nyata) yang membalas SMC_UNK, sehingga init SMC tidak menggantung dan
+ * semua modul itu load. WCN core/integ/platform/sipc/wlan kini built-in (=y)
+ * jadi tidak lagi muncul di daftar modul. */
 static const char *qemu_unsupported(const char *base) {
-    /* butuh secure monitor vendor (EL3 SiP) */
-    static const char *el3[] = {
-        "sprd_sip_svc", "sprd-cpufreq-v2", "sprd_debugstat", "sprd_pdbg",
-    };
-    /* butuh secure world Trusty (TIPC/SMC) -- tak ada di QEMU */
+    /* butuh secure world Trusty (TIPC endpoint) -- tak ada di QEMU */
     static const char *trusty[] = {
-        "trusty-pm", "ion_ipc_trusty",
+        "ion_ipc_trusty",
     };
-    /* WCN: dependensi melingkar (tak bisa di-insmod dalam urutan apa pun)
-     * + butuh chip WCN */
+    /* WCN BT/FM: butuh chip WCN nyata (SDIO/UART ke SC23xx) */
     static const char *wcn[] = {
-        "wcn_core", "wcn_integrate", "wcn_integrate_dev", "wcn_integrate_boot",
-        "wcn_sipc", "sprdwl", "sprdbt_tty", "sprd_fm",
+        "sprdbt_tty", "sprd_fm",
     };
     /* butuh modem/CP via SIPC (jadwal kerja async menabrak tanpa CP) */
     static const char *modem[] = {
         "ims_bridge", "ims_bridge_t",
     };
-    for (unsigned i = 0; i < sizeof el3 / sizeof el3[0]; i++)
-        if (strcmp(base, el3[i]) == 0) return "butuh EL3/SiP vendor";
     for (unsigned i = 0; i < sizeof trusty / sizeof trusty[0]; i++)
         if (strcmp(base, trusty[i]) == 0) return "butuh secure world Trusty";
     for (unsigned i = 0; i < sizeof wcn / sizeof wcn[0]; i++)
-        if (strcmp(base, wcn[i]) == 0) return "WCN: circular dep / butuh chip WCN";
+        if (strcmp(base, wcn[i]) == 0) return "WCN: butuh chip WCN";
     for (unsigned i = 0; i < sizeof modem / sizeof modem[0]; i++)
         if (strcmp(base, modem[i]) == 0) return "butuh modem/CP via SIPC";
     return NULL;

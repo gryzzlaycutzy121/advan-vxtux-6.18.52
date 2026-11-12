@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-aarch64-linux-gnu flex bison bc \
-            libssl-dev libelf-dev qemu-system-arm cpio kmod
+            libssl-dev libelf-dev qemu-system-arm cpio kmod device-tree-compiler
 
       - name: Config (device + enhanced + fragmen QEMU)
         run: |
@@ -46,6 +46,20 @@ jobs:
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) Image
           ls -l arch/arm64/boot/Image
 
+      - name: Build TF-A BL31 (EL3 untuk QEMU -> SMC_UNK)
+        run: |
+          set -e
+          # TF-A qemu default GICv2; QEMU kita pakai gic-version=3 -> paksa GICv3.
+          # ARM_LINUX_KERNEL_AS_BL33=1: BL33 adalah kernel Linux (bl33.bin=Image),
+          # FDT diedit BL2 (tambah PSCI) lalu diteruskan ke kernel via x0.
+          git clone --depth 1 https://github.com/ARM-software/arm-trusted-firmware.git /tmp/tfa
+          make -C /tmp/tfa CROSS_COMPILE=aarch64-linux-gnu- \
+            PLAT=qemu QEMU_USE_GIC_DRIVER=QEMU_GICV3 ARM_LINUX_KERNEL_AS_BL33=1 \
+            -j$(nproc) bl1 bl2 bl31
+          ls -l /tmp/tfa/build/qemu/release/bl1.bin \
+                /tmp/tfa/build/qemu/release/bl2.bin \
+                /tmp/tfa/build/qemu/release/bl31.bin
+
       - name: Build modules
         run: |
           cd 6.18.52-VXTux-UMS512
@@ -53,11 +67,33 @@ jobs:
           find . -name '*.ko' | sed 's#^\./##' | sort > /tmp/modules.list
           wc -l /tmp/modules.list | tee /tmp/ko_count.txt
           echo "--- ORI parity (236) present in build? ---"
-          miss=0
+          # WCN core/integ/platform/sipc/wlan sengaja BUILT-IN (=y): tidak muncul
+          # sebagai .ko. Jangan dihitung GAP; verifikasi lewat System.map.
+          BUILTIN_MODULES="drivers/vxtux/net/wireless/sprdwcn/platform/wcn_core.ko
+drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate.ko
+drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_boot.ko
+drivers/vxtux/net/wireless/sprdwcn/boot/wcn_integrate_dev.ko
+drivers/vxtux/net/wireless/sprdwcn/sipc/wcn_sipc.ko
+drivers/vxtux/net/wireless/sprdwcn/wlan/sprdwl.ko"
+          miss=0; builtin=0
           while read -r m; do
-            if [ ! -f "$m" ]; then echo "GAP: $m"; miss=$((miss+1)); fi
+            if [ ! -f "$m" ]; then
+              if echo "$BUILTIN_MODULES" | grep -qxF "$m"; then
+                echo "BUILT-IN(by design): $m"; builtin=$((builtin+1))
+              else
+                echo "GAP: $m"; miss=$((miss+1))
+              fi
+            fi
           done < ../module_load_manifest.txt
-          echo "ori_gap=$miss"
+          echo "ori_gap=$miss builtin_by_design=$builtin"
+          echo "--- verifikasi simbol WCN built-in di System.map ---"
+          for s in wcn_init_core get_wcn_bus_ops marlin_init; do
+            if grep -q " $s\$" System.map 2>/dev/null; then
+              echo "BUILTIN-SYM ok: $s"
+            else
+              echo "::warning::simbol built-in tidak ditemukan: $s"
+            fi
+          done
           # Urutan dependensi: modpost menulis field "depends=" di .modinfo.
           # modinfo -F depends membacanya -> topological sort (deps lebih dulu).
           cp /tmp/modules.list /tmp/modules.alphabetic.list
@@ -138,15 +174,28 @@ jobs:
           cp arch/arm64/boot/Image /tmp/Image
           tar -czf /tmp/built_kos.tar.gz -C /tmp/initramfs modules
 
-      - name: Boot QEMU (module load test)
+      - name: Boot QEMU (TF-A BL31 + module load test)
         run: |
           set +e
+          # Direktori kerja semihosting: BL1 (dari -bios) memuat BL2/BL31/BL33
+          # lewat semihosting relatif terhadap cwd. BL33 = kernel (ARM_LINUX_
+          # KERNEL_AS_BL33=1), jadi bl33.bin -> Image.
+          rm -rf /tmp/qemu-tfa && mkdir -p /tmp/qemu-tfa
+          TFADIR=/tmp/tfa/build/qemu/release
+          cp "$TFADIR/bl1.bin" "$TFADIR/bl2.bin" "$TFADIR/bl31.bin" /tmp/qemu-tfa/
+          cp 6.18.52-VXTux-UMS512/arch/arm64/boot/Image /tmp/qemu-tfa/Image
+          ln -sf Image /tmp/qemu-tfa/bl33.bin
+          ls -l /tmp/qemu-tfa
+          cd /tmp/qemu-tfa
           timeout --signal=KILL 300 qemu-system-aarch64 \
             -machine virt,gic-version=3,highmem=off,secure=on \
             -cpu cortex-a72 -smp 8 -m 2G \
-            -kernel 6.18.52-VXTux-UMS512/arch/arm64/boot/Image \
+            -bios bl1.bin \
+            -kernel Image \
+            -semihosting-config enable=on,target=native \
             -initrd /tmp/initramfs.cpio.gz \
-            -append "console=hvc0 rdinit=/init panic=-1 oops=panic loglevel=6" \
+            -append "console=ttyAMA0 console=hvc0 rdinit=/init panic=-1 oops=panic loglevel=6" \
+            -serial file:/tmp/tfa-pl011.log \
             -device virtio-serial-pci \
             -device virtconsole,chardev=vc0 \
             -chardev stdio,id=vc0,signal=off,logfile=/tmp/serial-modtest.log \
@@ -155,7 +204,10 @@ jobs:
             > /tmp/qemu-modtest-stdout.log 2>&1
           echo "qemu exit=$?"
           echo "serial bytes: $(wc -c < /tmp/serial-modtest.log 2>/dev/null)"
-          echo "--- tail serial ---"
+          echo "tfa/pl011 bytes: $(wc -c < /tmp/tfa-pl011.log 2>/dev/null)"
+          echo "--- tail tfa/pl011 (TF-A + early kernel) ---"
+          tail -n 30 /tmp/tfa-pl011.log 2>/dev/null
+          echo "--- tail serial (hvc0) ---"
           tail -n 40 /tmp/serial-modtest.log 2>/dev/null
           ok=0
           grep -q 'VXTUX-MODTEST-PASS' /tmp/serial-modtest.log && ok=1
@@ -167,6 +219,7 @@ jobs:
           fi
           echo '::error::module load test belum pass lihat log di atas'
           echo '--- qemu debug tail ---'; tail -n 20 /tmp/qemu-modtest.debug.log 2>/dev/null
+          echo '--- tfa/pl011 tail ---'; tail -n 40 /tmp/tfa-pl011.log 2>/dev/null
           exit 1
 
       - name: Upload serial log + Image + modul (untuk iterasi lokal)
@@ -176,12 +229,16 @@ jobs:
           name: modtest-artifacts
           path: |
             /tmp/serial-modtest.log
+            /tmp/tfa-pl011.log
             /tmp/qemu-modtest-stdout.log
             /tmp/qemu-modtest.debug.log
             /tmp/modtest-init-arch.txt
             /tmp/ko_count.txt
             /tmp/Image
             /tmp/built_kos.tar.gz
+            /tmp/tfa/build/qemu/release/bl1.bin
+            /tmp/tfa/build/qemu/release/bl2.bin
+            /tmp/tfa/build/qemu/release/bl31.bin
             /tmp/initramfs.cpio.gz
             /tmp/modules.list
           if-no-files-found: warn
