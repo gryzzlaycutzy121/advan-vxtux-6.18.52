@@ -176,6 +176,18 @@ jobs:
           cp arch/arm64/boot/Image /tmp/Image
           tar -czf /tmp/built_kos.tar.gz -C /tmp/initramfs modules
 
+      - name: Embed initramfs into Image (Linux-as-BL33 ignores QEMU -initrd)
+        run: |
+          set -e
+          cd 6.18.52-VXTux-UMS512
+          # ARM_LINUX_KERNEL_AS_BL33=1: BL33 is the kernel loaded from bl33.bin
+          # via semihosting. QEMU only places -kernel/-initrd into fw_cfg (read
+          # by EDK2, not by a bare Linux BL33), so bake the cpio into the Image.
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+            CONFIG_INITRAMFS_SOURCE="/tmp/initramfs.cpio.gz" Image -j$(nproc)
+          ls -l arch/arm64/boot/Image
+          cp arch/arm64/boot/Image /tmp/Image
+
       - name: Boot QEMU (TF-A BL31 + module load test)
         run: |
           set +e
@@ -195,7 +207,6 @@ jobs:
             -bios bl1.bin \
             -kernel Image \
             -semihosting-config enable=on,target=native \
-            -initrd /tmp/initramfs.cpio.gz \
             -append "console=ttyAMA0 console=hvc0 rdinit=/init panic=-1 oops=panic loglevel=6" \
             -serial file:/tmp/tfa-pl011.log \
             -device virtio-serial-pci \
