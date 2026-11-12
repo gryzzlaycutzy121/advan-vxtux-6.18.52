@@ -53,6 +53,9 @@ jobs:
           # ARM_LINUX_KERNEL_AS_BL33=1: BL33 adalah kernel Linux (bl33.bin=Image),
           # FDT diedit BL2 (tambah PSCI) lalu diteruskan ke kernel via x0.
           git clone --depth 1 https://github.com/ARM-software/arm-trusted-firmware.git /tmp/tfa
+          # lib/libfdt needs the dtc submodule (contrib/dtc); --depth clone skips
+          # submodules, so fetch just that one (others unused by PLAT=qemu).
+          git -C /tmp/tfa submodule update --init --depth 1 contrib/dtc
           make -C /tmp/tfa CROSS_COMPILE=aarch64-linux-gnu- \
             PLAT=qemu QEMU_USE_GIC_DRIVER=QEMU_GICV3 ARM_LINUX_KERNEL_AS_BL33=1 \
             -j$(nproc) bl1 bl2 bl31
@@ -183,8 +186,10 @@ jobs:
           # ARM_LINUX_KERNEL_AS_BL33=1: BL33 is the kernel loaded from bl33.bin
           # via semihosting. QEMU only places -kernel/-initrd into fw_cfg (read
           # by EDK2, not by a bare Linux BL33), so bake the cpio into the Image.
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
-            CONFIG_INITRAMFS_SOURCE="/tmp/initramfs.cpio.gz" Image -j$(nproc)
+          ./scripts/config --file .config \
+            --set-str INITRAMFS_SOURCE "/tmp/initramfs.cpio.gz"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image -j$(nproc)
           ls -l arch/arm64/boot/Image
           cp arch/arm64/boot/Image /tmp/Image
 
