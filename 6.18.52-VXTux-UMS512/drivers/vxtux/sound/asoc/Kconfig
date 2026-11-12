@@ -4,8 +4,9 @@
 #
 # Rantai RE (sym_router/cek_asoc): snd-soc-core -> card-utils -> dummy-codec
 # -> vbc-v4 (+fe-dai, pcm-routing) -> codec sc2730 -> mesin kartu.
-# compr-2stage-dma ditunda: jalur compress 5.4 (.compr_ops platform) hilang di
-# 6.18; perlu rework dai_link compress, bukan konversi mekanis.
+# compr-2stage-dma sudah di-port ke compress_ops ASoC 6.18; modul ini
+# men-select SND_SOC_COMPRESS agar core compress ikut terbangun (dan guard
+# config tidak melihat simbol compress hilang saat SND_SOC_SPRD dimatikan).
 #
 # Semua simbol bool: sound stack dibangun built-in (SOUND/SND/SND_SOC=y)
 # supaya simbol snd_soc_* ada di System.map dan gate C5 bisa membuktikan link.
@@ -78,6 +79,7 @@ config VXTUX_SND_SPRD_COMPR_2STAGE
 	tristate "Unisoc ASoC 2-stage compress platform (sprd-compr-2stage-dma)"
 	depends on VXTUX_SND_SPRD_CARD
 	depends on SPRD_AUDIO_MCDT && SPRD_AUDIO_SIPC
+	select SND_SOC_COMPRESS
 	default n
 	help
 	  Pengganti blob sprd-compr-2stage-dma.ko (5.4.210). Compress
