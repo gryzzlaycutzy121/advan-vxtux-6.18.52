@@ -21,7 +21,7 @@
  *      (dan FLUSH menembus cache internal eMMC);
  *   2. verifikasi dilakukan SETELAH invalidate_inode_pages2(), sehingga yang
  *      dibaca balik adalah isi disk, bukan page cache;
- *   3. log disimpan di 8 slot berurutan (bukan satu posisi tetap), jadi
+ *   3. log disimpan di 4 slot berurutan (bukan satu posisi tetap), jadi
  *      riwayat boot - bukan hanya cuplikan terakhir - tetap ada saat dump;
  *   4. snapshot juga ditulis ke region RAM yang direserve, sehingga boot
  *      yang mati SEBELUM driver MMC probe tetap meninggalkan jejak yang
@@ -29,15 +29,31 @@
  *
  * TATA LETAK DI PARTISI cache (mmcblk0p49, 100 MiB, ext4 scratch)
  * --------------------------------------------------------------
- *   +0x00000000  laporan initramfs userspace (VXTUXLOG1) - bukan milik kita
- *   +0x00800000  slot 0..7, masing-masing 4 MiB:
+ * Slot berada di EKOR partisi, dan base-nya dihitung saat runtime dari
+ * ukuran partisi (100 MiB -> base = 92 MiB, area 92..100 MiB).
+ *
+ * Kenapa bukan offset tetap di awal partisi (versi pertama memakai
+ * +0x00800000): partisi cache di perangkat ini adalah ext4 dengan SATU
+ * block group (blok 4 KiB, 25600 blok).  Semua metadata (block bitmap,
+ * inode bitmap, inode table) occupy blok 0..~1566, jadi area data mulai
+ * ~6,25 MiB - dan file log initramfs (/cache/vxtux-logs/*) dialokasikan
+ * tepat di sana.  Area +8 MiB milik kita bertabrakan dengan file log kita
+ * SENDIRI: slot logrec menimpa isi berkas yang justru menyimpan dmesg
+ * boot tersebut.  Ekor partisi adalah area data murni (metadata selalu
+ * mendahului data di dalam satu group) dan praktis tidak pernah dipakai
+ * initramfs (file log initramfs kecil, di awal partisi).
  *
  *        +0x0000  struct lr_hdr (56 byte, lihat di bawah)
- *        +0x1000  teks dmesg mentah (maks 4 MiB - 4096)
+ *        +0x1000  teks dmesg mentah (maks 2 MiB - 4096)
  *
- *   Slot dipakai bergilang: snapshot ke-N ditulis ke slot (N % 8).  Jadi
- *   dump `cache` selalu memuat 8 snapshot terakhir; dengan initcall_debug=1
+ *   Slot dipakai bergilang: snapshot ke-N ditulis ke slot (N % 4).  Jadi
+ *   dump `cache` selalu memuat 4 snapshot terakhir; dengan initcall_debug=1
  *   itu cukup untuk membaca urutan initcall lintas beberapa detik boot.
+ *
+ *   Ukuran partisi diambil dari block device saat runtime.  Kalau ukuran
+ *   tidak bisa dibaca, atau partisi terlalu kecil, kanal eMMC DIMATIKAN
+ *   (cetak satu kali) dan rekaman tetap jalan di RAM saja - lebih baik
+ *   tidak menulis sama sekali daripada menebak offset dan menimpa data.
  *
  * TATA LETAK REKAMAN RAM (default 0xAFC00000, 4 MiB, lewat cmdline vxtuxlog=)
  * --------------------------------------------------------------------------
@@ -57,7 +73,7 @@
  * BIAYA
  * -----
  * Satu snapshot = satu kali kmsg_dump_get_buffer (~3,5 MiB memcpy) plus satu
- * tulisan 4 MiB + fsync tiap 3 detik setelah channel eMMC hidup (500 ms
+ * tulisan 2 MiB + fsync tiap 3 detik setelah channel eMMC hidup (500 ms
  * selama boot awal).  Slot dilewati bila isi log tidak berubah, jadi eMMC
  * tidak dipakai menulis data yang sama berulang-ulang.
  */
@@ -96,9 +112,9 @@
 /* ---- partisi tujuan ---------------------------------------------------- */
 #define LR_DISK		"mmcblk0"
 #define LR_PARTNO	49		/* cache: 100 MiB, scratch */
-#define LR_BASE		(8ULL << 20)	/* 8 MiB di dalam cache */
-#define LR_SLOT_SIZE	(4U << 20)	/* 4 MiB per snapshot */
-#define LR_SLOTS	8U		/* riwayat 8 snapshot */
+#define LR_SLOT_SIZE	(2U << 20)	/* 2 MiB per snapshot */
+#define LR_SLOTS	4U		/* riwayat 4 snapshot */
+#define LR_AREA_SIZE	((u64)LR_SLOTS * LR_SLOT_SIZE)
 #define LR_TEXT_OFF	4096U		/* teks selalu mulai di +0x1000 */
 #define LR_TEXT_MAX	(LR_SLOT_SIZE - LR_TEXT_OFF)
 
@@ -151,9 +167,11 @@ static bool lr_ram_ok;
 static u64 lr_ram_seq;
 static u32 lr_boot_count = 1;
 
-static u64 lr_disk_seq;			/* jumlah snapshot yang sampai ke disk */
+static u64 lr_disk_seq;		/* jumlah snapshot yang sampai ke disk */
 static u32 lr_next_slot;		/* slot berikutnya yang akan dipakai */
 static bool lr_channel_ok;		/* sudah pernah sukses menulis ke eMMC */
+static u64 lr_base;			/* offset slot 0 di partisi (ekor) */
+static u64 lr_part_bytes;		/* ukuran partisi cache (byte) */
 static bool lr_prev_boot_saved;		/* record boot lama sudah didorong */
 static char *lr_prev_boot;		/* salinan record dari region RAM */
 static size_t lr_prev_boot_len;
@@ -318,6 +336,38 @@ static struct file *lr_open_part(void)
 }
 
 /*
+ * Hitung base slot dari UKURAN SEBENARNYA partisi (bukan offset tebakan).
+ * Partisi cache perangkat ini 100 MiB -> area slot 92..100 MiB (ekor).
+ * Kalau ukuran tidak bisa dibaca atau partisi terlalu kecil, kanal eMMC
+ * dimatikan: rekaman RAM tetap jalan, dan kita tidak menimpa data apa pun.
+ */
+static int lr_setup_base(struct file *f)
+{
+	struct block_device *bdev;
+	u64 bytes;
+
+	if (lr_base)
+		return 0;
+
+	bdev = file_bdev(f);
+	if (!bdev) {
+		lr_report("partition size", -ENODEV);
+		return -ENODEV;
+	}
+	bytes = (u64)bdev_nr_bytes(bdev);
+	if (bytes < LR_AREA_SIZE + (16ULL << 20)) {
+		lr_report("partition too small", -EINVAL);
+		return -EINVAL;
+	}
+	lr_part_bytes = bytes;
+	lr_base = (bytes - LR_AREA_SIZE) & ~((u64)(1 << 20) - 1);
+	pr_info("cache p%d: %llu bytes, slots at %#llx..%#llx (%u x %u MiB)\n",
+		LR_PARTNO, bytes, lr_base, lr_base + LR_AREA_SIZE - 1,
+		LR_SLOTS, LR_SLOT_SIZE >> 20);
+	return 0;
+}
+
+/*
  * Tulis satu record ke slot eMMC lalu PASTIKAN byte-nya ada di disk.
  *
  * Urutan ini yang membuat kanal ini benar-benar persisten:
@@ -349,7 +399,12 @@ static int lr_disk_put(const char *magic, const char *text, size_t len,
 	if (IS_ERR(f))
 		return PTR_ERR(f);
 
-	pos = LR_BASE + (u64)slot * LR_SLOT_SIZE;
+	if (lr_setup_base(f)) {
+		fput(f);
+		return -EIO;
+	}
+
+	pos = lr_base + (u64)slot * LR_SLOT_SIZE;
 	ret = kernel_write(f, lr_buf, total, &pos);
 	if (ret != (int)total) {
 		int err = ret < 0 ? ret : -EIO;
@@ -369,7 +424,7 @@ static int lr_disk_put(const char *magic, const char *text, size_t len,
 
 	/* Buang page cache, lalu baca balik dari disk. */
 	invalidate_inode_pages2(f->f_mapping);
-	pos = LR_BASE + (u64)slot * LR_SLOT_SIZE;
+	pos = lr_base + (u64)slot * LR_SLOT_SIZE;
 	n = kernel_read(f, back, sizeof(back), &pos);
 	fput(f);
 	if (n != (ssize_t)sizeof(back) || memcmp(back, magic, LR_MAGIC_LEN)) {
@@ -413,7 +468,7 @@ static void lr_disk_tick(void)
 	if (!lr_channel_ok) {
 		lr_channel_ok = true;
 		pr_info("eMMC channel up: %zu bytes of dmesg -> cache p%d + %#llx slot %u (fsync + disk verify)\n",
-			len, LR_PARTNO, (unsigned long long)LR_BASE,
+			len, LR_PARTNO, (unsigned long long)lr_base,
 			(lr_next_slot + LR_SLOTS - 1) % LR_SLOTS);
 	}
 }
@@ -466,7 +521,7 @@ static int lr_show(struct seq_file *m, void *v)
 {
 	seq_printf(m, "disk_seq=%llu next_slot=%u slots=%u base=%#llx size=%u\n",
 		   lr_disk_seq, lr_next_slot, LR_SLOTS,
-		   (unsigned long long)LR_BASE, LR_SLOT_SIZE);
+		   (unsigned long long)lr_base, LR_SLOT_SIZE);
 	seq_printf(m, "channel_ok=%u last_len=%zu last_crc=%08x last_err=%d\n",
 		   lr_channel_ok, lr_prev_len, lr_prev_crc, lr_last_err);
 	seq_printf(m, "ram_phys=%pa ram_ok=%u ram_seq=%llu boot_count=%u\n",
@@ -552,7 +607,7 @@ static int __init vxtux_logrec_init(void)
 	proc_create_single("vxtuxlog", 0400, NULL, lr_show);
 	pr_info("active: %u slots x %u MiB in " LR_DISK "p%d + %#llx, ram=%pa, boot #%u\n",
 		LR_SLOTS, LR_SLOT_SIZE >> 20, LR_PARTNO,
-		(unsigned long long)LR_BASE, &lr_ram_phys, lr_boot_count);
+		(unsigned long long)lr_base, &lr_ram_phys, lr_boot_count);
 	return 0;
 }
 /*
