@@ -75,10 +75,43 @@ config VXTUX_INITTRACE
 
 	  Default n; enable only while chasing a boot hang.
 
-config VXTUX_FLIGHTREC
-	bool "Record the boot log to the cache partition"
+config VXTUX_LOGREC
+	bool "Reset-proof boot log recorder (cache slots + RAM record)"
 	depends on PRINTK
 	depends on BLOCK
+	help
+	  Rekam log kernel (dmesg) ke partisi cache (mmcblk0p49) secara
+	  berkala, dengan jaminan byte benar-benar sampai ke eMMC, lalu simpan
+	  juga salinannya di region RAM yang direserve supaya boot yang mati
+	  sebelum driver MMC probe tetap meninggalkan jejak.
+
+	  Kenapa perlu: pendahulunya (VXTUX_FLIGHTREC) memverifikasi tulisannya
+	  dengan membaca balik lewat page cache, sehingga melaporkan "write OK"
+	  padahal tidak ada satu byte pun di eMMC.  AP di perangkat ini mati oleh
+	  watchdog sekitar detik ke-30, jauh sebelum writeback 30 detik jalan -
+	  itulah sebab 28 dump cache (artix6..artix33) byte-identik.
+
+	  Bedanya dengan VXTUX_FLIGHTREC:
+	    * vfs_fsync() setelah setiap tulisan (sync_blockdev + FLUSH eMMC),
+	    * verifikasi dilakukan setelah invalidate_inode_pages2(), jadi yang
+	      dibaca balik adalah isi disk, bukan page cache,
+	    * 8 slot x 4 MiB bergilang -> riwayat 8 snapshot terakhir, bukan
+	      hanya cuplikan terakhir,
+	    * record RAM (cmdline vxtuxlog=<phys>) dipanen boot berikutnya dan
+	      ikut ditulis ke eMMC dengan reason=PREVBOOT,
+	    * status ringkas di /proc/vxtuxlog.
+
+	  Tata letak dan cara membaca: lihat kepala vxtux_logrec.c serta
+	  out/tools/baca_logrec.py.  Aktifkan hanya saat mengejar masalah boot,
+	  karena driver ini menulis eMMC terus-menerus.
+
+config VXTUX_FLIGHTREC
+	bool "Record the boot log to the cache partition (deprecated: pakai VXTUX_LOGREC)"
+	depends on PRINTK
+	depends on BLOCK
+	# Dua penulis ke offset yang sama hanya akan saling menimpa; VXTUX_LOGREC
+	# adalah penggantinya (fsync + verifikasi dari disk + 8 slot + record RAM).
+	depends on !VXTUX_LOGREC
 	help
 	  Copy the kernel log buffer (dmesg) to the cache partition
 	  (mmcblk0p49, offset 8 MiB) every ~3 seconds from a kthread, and
