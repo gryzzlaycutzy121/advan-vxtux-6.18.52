@@ -65,11 +65,28 @@ di offset 64 (yang dicetak LK). Hasilnya diverifikasi: magic, `header_size`,
 `header_version`, kernel di offset 4096, ukuran page-aligned, dan ramdisk
 byte-identik.
 
-**Bukti lokal:** `p1/out/pack-test.img` (50.585.600 B, 12.350 page) dihasilkan
-dari `out/6.18.52-VXTux-UMS512/Image` + template di atas. Ini **bukti packing
-saja** — kernel di dalamnya masih Image lama yang cmdline-nya `panic=15
-initcall_debug=1`, jadi jangan dipakai untuk P1. `boot_p1.img` yang sah lahir
-dari Image hasil build dengan `CONFIG_CMDLINE` P1.
+**Hasil nyata (CI):**
+| Item | Nilai |
+|---|---|
+| run | https://github.com/gryzzlaycutzy121/advan-vxtux-6.18.52/actions/runs/44022757221 |
+| kernelrelease | `6.18.52-VXTux-UMS512` |
+| compiler | `aarch64-linux-gnu-gcc 11.4.0` (ubuntu-22.04) |
+| Image | 40.813.056 B, sha256 `fc1be9d7f7d995e749618ea467e697bcc80767a1b6fcdc1a271742a1d84bae2c` |
+| boot_p1.img | 42.311.680 B (10.330 page), ramdisk 1.490.813 B dari template |
+
+Verifikasi yang dijalankan: `sha256sum -c Image.sha256` OK; magic ARM64 di
+`0x38`; string `panic=0`, `keep_bootcon`, `printk.always_kmsg_dump=1`,
+`androidboot.init_fatal_panic=true`, `vxtuxlog=0xAFC00000` semuanya ADA;
+`initcall_debug=1` dan `panic=15` tidak ada; kernel di offset 4096 punya
+sha256 identik dengan `Image`.
+
+Catatan: `p1/out/pack-test.img` (peninggalan percobaan awal) memakai Image
+lama, jangan dipakai. `boot_p1.img` yang sah adalah yang di atas.
+
+Pipeline CI-nya: 6.18.52 build penuh ~26 menit di runner 2-core; workflow
+menulis `p1/out/diag.txt` + `status.txt` lalu meng-commit `Image.gz` +
+`build-report.txt` kembali ke branch `p1-build` (artefak Actions butuh token
+admin untuk diunduh, jadi jalur commit ini yang dipakai).
 
 Kenapa tidak di mesin Windows ini: `HOSTCC=clang` → `fixdep.c: 'sys/types.h'
 file not found`; `HOSTCC=gcc` (mingw) → `mkdir() too many arguments`, `getline`
