@@ -180,6 +180,9 @@ static size_t lr_prev_boot_len;
 static int lr_last_err;			/* errno terakhir yang sudah dicetak */
 static unsigned long lr_last_err_jif;
 static struct task_struct *lr_task;
+static struct file *lr_disk_f;		/* dipegang oleh kthread (reuse jalur cepat) */
+static size_t lr_last_text_len;		/* panjang teks dari lr_ram_save terakhir */
+static bool lr_skip_verify;		/* jalur panic: lewati baca-balik verifikasi */
 static DEFINE_MUTEX(lr_lock);
 
 /* ---- util ------------------------------------------------------------- */
@@ -256,6 +259,7 @@ static void lr_ram_save(u32 reason)
 	dcache_clean_poc((unsigned long)h,
 			 (unsigned long)h + LR_TEXT_OFF + len);
 	lr_ram_seq++;
+	lr_last_text_len = len;	/* untuk jalur panic -> ring tanpa grab ulang */
 }
 
 /*
@@ -396,12 +400,13 @@ static int lr_disk_put(const char *magic, const char *text, size_t len,
 		memcpy(lr_buf + LR_TEXT_OFF, text, len);
 	total = ALIGN((size_t)LR_TEXT_OFF + len, 512);
 
-	f = lr_open_part();
+	f = lr_disk_f ? lr_disk_f : lr_open_part();
 	if (IS_ERR(f))
 		return PTR_ERR(f);
 
 	if (lr_setup_base(f)) {
-		fput(f);
+		if (f != lr_disk_f)
+			fput(f);
 		return -EIO;
 	}
 
@@ -410,7 +415,8 @@ static int lr_disk_put(const char *magic, const char *text, size_t len,
 	if (ret != (int)total) {
 		int err = ret < 0 ? ret : -EIO;
 
-		fput(f);
+		if (f != lr_disk_f)
+			fput(f);
 		lr_report("write", err);
 		return err;
 	}
@@ -418,20 +424,32 @@ static int lr_disk_put(const char *magic, const char *text, size_t len,
 	/* fsync: tanpa ini data hanya ada di page cache (bug versi lama). */
 	ret = vfs_fsync(f, 0);
 	if (ret) {
-		fput(f);
+		if (f != lr_disk_f)
+			fput(f);
 		lr_report("fsync", ret);
 		return ret;
 	}
 
-	/* Buang page cache, lalu baca balik dari disk. */
-	invalidate_inode_pages2(f->f_mapping);
-	pos = lr_base + (u64)slot * LR_SLOT_SIZE;
-	n = kernel_read(f, back, sizeof(back), &pos);
-	fput(f);
-	if (n != (ssize_t)sizeof(back) || memcmp(back, magic, LR_MAGIC_LEN)) {
-		lr_report("verify readback after fsync", -EIO);
-		return -EIO;
+	/*
+	 * Buang page cache, lalu baca balik dari disk.  Di jalur panic
+	 * (lr_skip_verify) verifikasi dilewati: yang penting teks sudah
+	 * fsync ke disk; readback bisa memblokir jalur panic.
+	 */
+	if (!lr_skip_verify) {
+		invalidate_inode_pages2(f->f_mapping);
+		pos = lr_base + (u64)slot * LR_SLOT_SIZE;
+		n = kernel_read(f, back, sizeof(back), &pos);
+		if (n != (ssize_t)sizeof(back) || memcmp(back, magic, LR_MAGIC_LEN)) {
+			lr_report("verify readback after fsync", -EIO);
+			if (f != lr_disk_f)
+				fput(f);
+			return -EIO;
+		}
 	}
+
+	/* Pegang file terbuka untuk reuse cepat (kthread / jalur panic). */
+	if (!lr_disk_f)
+		lr_disk_f = f;
 
 	lr_disk_seq++;
 	lr_next_slot = (slot + 1) % LR_SLOTS;
@@ -484,7 +502,8 @@ static int lr_thread(void *unused)
 		lr_disk_tick();
 		mutex_unlock(&lr_lock);
 
-		msleep(lr_channel_ok ? 3000 : 500);
+		/* 500 ms: ring selalu segar, tidak bergantung channel_ok. */
+		msleep(500);
 	}
 	return 0;
 }
@@ -492,21 +511,32 @@ static int lr_thread(void *unused)
 /* ---- panic ------------------------------------------------------------ */
 
 /*
- * Jangan pernah memblokir jalur panic: CPU lain bisa memegang lock, dan
- * watchdog akan mematikan semuanya sebelum tulisan selesai.  Yang penting
- * teks sudah masuk region RAM (flush PoC), karena itu yang dipanen boot
- * berikutnya.
+ * Jalur panic/kmsg_dump: selain ke RAM, dorong teks yang baru diambil
+ * lr_ram_save() ke ring eMMC (best-effort).  Hanya bila kanal eMMC sudah
+ * naik (MMC siap + file partisi sudah dipegang kthread); verifikasi
+ * baca-balik dilewati (lr_skip_verify) supaya jalur panic tidak memblokir.
+ * Kalau kanal belum naik, teks tetap di RAM (dipanen boot 6.18 berikutnya).
  */
+static void lr_panic_flush(u32 reason)
+{
+	if (!lr_channel_ok || !lr_last_text_len || !lr_disk_f)
+		return;
+	lr_skip_verify = true;
+	lr_disk_put(LR_MAGIC, lr_text, lr_last_text_len, reason);
+	lr_skip_verify = false;
+}
+
 static int lr_panic_notify(struct notifier_block *nb, unsigned long action,
 			   void *data)
 {
 	/*
-	 * Hanya region RAM: lr_disk_tick() memakai fsync/invalidate yang boleh
-	 * tidur dan bisa mengambil lock blok - tidak boleh dari jalur panic.
-	 * Jejak di RAM (sudah di-flush ke PoC) dipanen boot berikutnya.
+	 * RAM dulu (flushed ke PoC), lalu best-effort ke ring eMMC bila
+	 * kanalnya sudah naik.  fsync bisa memblokir, tapi panic=15 memberi
+	 * waktu; kalau kanal belum naik, cukup RAM yang dipanen boot berikut.
 	 */
 	if (mutex_trylock(&lr_lock)) {
 		lr_ram_save(LR_REASON_PANIC);
+		lr_panic_flush(LR_REASON_PANIC);
 		mutex_unlock(&lr_lock);
 	}
 	return NOTIFY_OK;
@@ -538,6 +568,7 @@ static void lr_kmsg_dump(struct kmsg_dumper *dumper,
 	/* Sama seperti jalur panic: jangan pernah memblokir. */
 	if (mutex_trylock(&lr_lock)) {
 		lr_ram_save(why);
+		lr_panic_flush(why);
 		mutex_unlock(&lr_lock);
 	}
 }

@@ -5515,6 +5515,19 @@
 		tui {
 			compatible = "sprd,trusty-tui-v1";
 		};
+
+		/*
+		 * Region RAM 0xAFC00000 (4 MiB) untuk perekam log VXTUX
+		 * (drivers/vxtux/debug/vxtux_logrec.c).  Driver memakai
+		 * early_param vxtuxlog=<phys> untuk memblock_reserve; node ini
+		 * mendokumentasikan + membuat DT reserved-memory parser ikut
+		 * me-reserve.  TANPA no-map: linear mapping tetap ada, __va()
+		 * aman dipakai driver.
+		 */
+		vxtuxlog@afc00000 {
+			compatible = "sprd,vxtuxlog";
+			reg = <0x00 0xafc00000 0x00 0x400000>;
+		};
 	};
 
 	memory@80000000 {
