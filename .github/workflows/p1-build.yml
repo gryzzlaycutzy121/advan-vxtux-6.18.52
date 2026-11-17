@@ -1,6 +1,6 @@
 name: p1-build
 
-# Build Image 6.18.52 dengan CONFIG_CMDLINE P1 (panic=0, tanpa initcall_debug),
+# Build Image 6.18.52 dengan CONFIG_CMDLINE P1 (panic=15, tanpa initcall_debug),
 # lalu COMMIT hasil + diagnostik kembali ke branch ini (artefak Actions tidak
 # bisa diunduh tanpa token admin).
 #
@@ -80,7 +80,13 @@ jobs:
           grep -n '^CONFIG_CMDLINE' .config >> "$D" 2>&1 || true
           sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' .config > .cmdline.effective
           cat .cmdline.effective >> "$D"
-          grep -q 'panic=0' .cmdline.effective
+          # cmdline efektif = isi p1-cmdline.txt (panic=15, hardlockup_panic=1).
+          grep -q 'panic=15' .cmdline.effective
+          grep -q 'hardlockup_panic=1' .cmdline.effective
+          grep -q 'vxtuxlog=' .cmdline.effective
+          if grep -q 'initcall_debug' .cmdline.effective; then
+            echo "FATAL: initcall_debug masih di cmdline efektif" >> "$D"; exit 1
+          fi
           echo "OK: cmdline P1 efektif"
 
       - name: Build Image (best effort, direkam)
@@ -103,7 +109,10 @@ jobs:
         run: |
           set -euo pipefail
           D=../p1/out/diag.txt
-          strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0" | tee -a "$D"
+          # Cmdline tertanam = isi p1-cmdline.txt: earlycon ke ttyS1, panic=15,
+          # hardlockup_panic=1, vxtuxlog (region RAM).  Jangan grep string lama.
+          strings arch/arm64/boot/Image | grep -m1 "earlycon console=ttyS1" | tee -a "$D"
+          strings arch/arm64/boot/Image | grep -q 'vxtuxlog=0xAFC00000'
           strings arch/arm64/boot/Image | grep -q 'panic=15'
           strings arch/arm64/boot/Image | grep -q 'hardlockup_panic=1'
           if strings arch/arm64/boot/Image | grep -q 'initcall_debug=1'; then
