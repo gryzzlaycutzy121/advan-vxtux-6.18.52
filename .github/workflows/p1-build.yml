@@ -17,7 +17,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    # Sama dengan CI repo ini yang sudah hijau (qemu-boot.yml/quick-cc.yml):
+    # ubuntu-22.04 + gcc-aarch64-linux-gnu. .config warisan berisi CC_IS_GCC
+    # DAN CC_IS_CLANG/CFI_CLANG/LTO_CLANG; olddefconfig yang merapikannya.
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +34,24 @@ jobs:
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
             bc flex bison libssl-dev libelf-dev
 
+      - name: Perbaiki exec bit skrip kernel
+        # Repo ini dibuat di Windows: scripts/config dan scripts/mkcompile_h
+        # tersimpan mode 100644, sehingga `./scripts/config` -> Permission
+        # denied (itu penyebab run pertama gagal di step cmdline).
+        run: |
+          set -euo pipefail
+          cd 6.18.52-VXTux-UMS512
+          grep -rlI '^#!' scripts | xargs -r chmod +x
+          chmod +x scripts/config scripts/mkcompile_h
+          ls -l scripts/config scripts/mkcompile_h | awk '{print $1, $9}'
+
       - name: Terapkan CONFIG_CMDLINE P1 + pstore
         working-directory: 6.18.52-VXTux-UMS512
         run: |
           set -euo pipefail
           CMD="$(tr -d '\r\n' < ../p1/p1-cmdline.txt)"
-          ./scripts/config \
+          # `sh` dipakai supaya tidak bergantung pada exec bit.
+          sh ./scripts/config \
             --set-str CONFIG_CMDLINE "$CMD" \
             -e CONFIG_CMDLINE_FORCE -d CONFIG_CMDLINE_FROM_BOOTLOADER -d CONFIG_CMDLINE_EXTEND \
             -e CONFIG_PSTORE -e CONFIG_PSTORE_RAM -e CONFIG_PSTORE_CONSOLE -e CONFIG_PSTORE_PMSG
