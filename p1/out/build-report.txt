@@ -1,6 +1,6 @@
 kernelrelease: 6.18.52-VXTux-UMS512-artix
 image_raw_size: 48574976
-image_gz_size: 19486071
+image_gz_size: 19486650
 compiler: aarch64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
-cmdline: earlycon console=tty0 console=ttyS1,115200n8 loglevel=8 ignore_loglevel keep_bootcon no_console_suspend nokaslr rdinit=/vxtux/init loop.max_part=7 printk.devkmsg=on panic=15 softlockup_panic=1 hardlockup_panic=1 clk_ignore_unused pd_ignore_unused printk.always_kmsg_dump=1 vxtuxfb=0x9d000000,0x9e000000 vxtuxlog=0xAFC00000 androidboot.console=ttyS1 androidboot.hardware=ums512_1h10 androidboot.slot_suffix=_a androidboot.serialno=0123456789ABCDEF androidboot.selinux=permissive androidboot.init_fatal_panic=true
-commit: c663bb5b828d635e9bd0c0930d874871425a29d1
+cmdline: earlycon console=tty0 console=ttyS1,115200n8 loglevel=8 ignore_loglevel keep_bootcon no_console_suspend nokaslr ramdisk_size=16384 rdinit=/vxtux/init loop.max_part=7 printk.devkmsg=on panic=15 softlockup_panic=1 hardlockup_panic=1 clk_ignore_unused pd_ignore_unused printk.always_kmsg_dump=1 vxtuxfb=0x9d000000,0x9e000000 vxtuxlog=0xAFC00000 androidboot.console=ttyS1 androidboot.hardware=ums512_1h10 androidboot.slot_suffix=_a androidboot.serialno=0123456789ABCDEF androidboot.selinux=permissive androidboot.init_fatal_panic=true
+commit: c2207f2b60630a4c9ca78c46cbfb714af23f82a4
