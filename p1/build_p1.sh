@@ -36,7 +36,7 @@ make ARCH=arm64 CROSS_COMPILE="$CROSS" olddefconfig
 
 # 2. Bukti cmdline benar-benar masuk config (jangan percaya ingatan).
 grep -E '^CONFIG_CMDLINE' .config | tee "$OUT/p1-cmdline-efektif.txt"
-grep -q 'panic=0' .config || { echo "FATAL: panic=0 tidak ada di CONFIG_CMDLINE"; exit 1; }
+grep -q "panic=15" .config || { echo "FATAL: panic=15 tidak ada di CONFIG_CMDLINE"; exit 1; }
 # initcall_debug boleh muncul di komentar .config, jadi periksa nilai efektifnya.
 if sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' .config | grep -q 'initcall_debug'; then
 	echo "FATAL: initcall_debug masih ada di CONFIG_CMDLINE"; exit 1

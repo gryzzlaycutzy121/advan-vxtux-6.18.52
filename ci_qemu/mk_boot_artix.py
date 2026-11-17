@@ -60,7 +60,7 @@ CMDLINE = (
     # tidak pernah menghasilkan apa pun. Dengan softlockup_panic=1, hang 20
     # detik berubah menjadi panic -> pstore menulis dmesg ke ramoops -> panic=15
     # melakukan warm reset -> isi ramoops bisa dibaca dari mode download.
-    "softlockup_panic=1 "
+    "softlockup_panic=1 hardlockup_panic=1 "
     "vxtuxfb=0x9d000000,0x9e000000 "
     # vxtux_logrec: region RAM 4 MiB untuk record tahan-reset; dipanen boot
     # berikutnya lalu ditulis ke slot cache (lihat drivers/vxtux/debug/
