@@ -17,7 +17,10 @@ tidak berubah perilaku. Skrip yang menyuntik cmdline P1 saat build.
 | `build_p1.sh` | build di Linux/CI: config P1 → Image → `boot_p1.img`, config dipulihkan |
 | `pack_p1.mjs` | **packer**: header + ramdisk dari boot image yang sudah terbukti load |
 | `p1-build.yml` | workflow GitHub Actions (dispatch; unggah Image/DTB/boot_p1.img) |
-| `dump_p1.bat` | `spd_dump`: baca ramoops + vxtuxlog + cache + sysdumpdb |
+| `dump_all.bat` | **dump semua kanal** via `spd_dump` (mode download) |
+| `dump_all_adb.sh` | **dump semua kanal** via `adb` (device hidup) |
+| `log_report.mjs` | gabungkan jadi `00-SEMUA.txt` + `01-RINGKAS.txt` |
+| `dump_p1.bat` | dump ringkas (ramoops + vxtuxlog + cache + sysdumpdb) |
 | `dump_extract.mjs` | ekstrak teks & record dari hasil `read_mem` |
 | `04-contoh-stok-5.4.210.md` | contoh implementasi dari biner stok 5.4.210 + pemetaan |
 | `out/pack-test.img` | bukti packing (kernel lama; bukan P1 — lihat §3) |
@@ -109,16 +112,46 @@ spd_dump_new.exe --wait 300 exec_addr 0x3ee8 ^
 ```
 Varian B (panen log otomatis): build dengan `panic=15`.
 
-## 5. Baca hasil
+## 5. Dump SEMUA log
 
-`p1\dump_p1.bat` (mode download) menghasilkan:
+### a) Perangkat mati / layar beku → mode download
+```bat
+dump_all.bat          rem RAM + partisi log  (~31 MB, 1-2 menit)
+dump_all.bat full     rem + partisi cache 128 MB (~7-8 menit)
 ```
-read_mem 0xfff80000 0x40000   -> p1_ramoops.bin
-read_mem 0xAFC00000 0x400000  -> p1_vxtuxlog.bin
-read_part cache / sysdumpdb   -> cache & dump vendor
+Yang diambil:
+
+| Kanal | Sumber | Isi |
+|---|---|---|
+| ramoops | `read_mem 0xfff80000 0x40000` | pstore record + console + pmsg |
+| vxtuxlog | `read_mem 0xAFC00000 0x400000` | snapshot `kmsg_dump` (2 slot, crc) |
+| uboot_log (RAM) | `read_mem 0x9de80000 0x80000` | log LK: boot reason, cmdline |
+| sysdumpinfo | `read_mem 0x80001000 0x1000` | struct sysdump stok |
+| sysdump-uboot | `read_mem 0x9f000000 0x1000000` | area dump vendor/LK |
+| uboot_log, sysdumpdb, misc | `read_part` | partisi log LK & dump |
+| cache (opsional) | `read_part cache 0x8000000` | `/cache/vxtux-logs/*.txt` |
+
+Hasil di `E:\spd_dump_logs\p1-<tanggal>_<jam>\`: `*.bin` (mentah),
+`*.text.txt`, `*.rec-<seq>-r<reason>.txt`, lalu **`00-SEMUA.txt`** (gabungan
+semua kanal) dan **`01-RINGKAS.txt`** (hitungan + baris penting per penanda:
+panic, oops/WARN, watchdog/lockup, initcall gagal, deferred, pstore, init
+userspace, storage, display, firmware, reboot).
+
+### b) Perangkat hidup / adb jalan
+```bash
+bash p1/dump_all_adb.sh
 ```
-lalu `node p1\dump_extract.mjs p1_ramoops.bin p1_vxtuxlog.bin`
-→ `*.text.txt` dan `*.rec-<seq>-r<reason>.txt` (crc diperiksa).
+Mengambil `dmesg`, `/proc/cmdline`, `uname -a`, `console-ramoops-0`,
+`dmesg-ramoops-0`, `/proc/vxtuxlog`, `/sys/kernel/debug/devices_deferred`,
+`/proc/last_kmsg`, daftar `/cache/vxtux-logs` (+ pull bila bisa), dan properti
+slot/serialno/verity. Laporannya sama: `01-RINGKAS.txt`.
+
+### c) Manual per kanal
+`p1\dump_p1.bat` masih ada untuk dump ringkas (ramoops + vxtuxlog + cache +
+sysdumpdb), dan `dump_extract.mjs` bisa dipakai langsung pada satu berkas:
+```
+node p1\dump_extract.mjs E:\spd_dump_logs\p1-...\a1_ramoops.bin
+```
 
 ## 6. Tabel keputusan
 
