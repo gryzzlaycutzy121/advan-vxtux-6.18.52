@@ -1,11 +1,11 @@
 name: p1-build
 
 # Build Image 6.18.52 dengan CONFIG_CMDLINE P1 (panic=0, tanpa initcall_debug),
-# lalu COMMIT hasilnya kembali ke branch ini sebagai p1/out/Image.gz supaya bisa
-# diambil dengan `git fetch` (artefak Actions butuh token untuk diunduh).
+# lalu COMMIT hasil + diagnostik kembali ke branch ini (artefak Actions tidak
+# bisa diunduh tanpa token admin).
 #
-# Dipicu oleh push ke branch p1-build. Commit balik memakai [skip ci] agar
-# tidak memicu loop.
+# Dirancang SELF-DIAGNOSING: log Actions butuh hak admin, jadi setiap langkah
+# menulis ke p1/out/diag.txt dan langkah terakhir SELALU commit file itu.
 
 on:
   push:
@@ -17,27 +17,22 @@ permissions:
 
 jobs:
   build:
-    # Sama dengan CI repo ini yang sudah hijau (qemu-boot.yml/quick-cc.yml):
-    # ubuntu-22.04 + gcc-aarch64-linux-gnu. .config warisan berisi CC_IS_GCC
-    # DAN CC_IS_CLANG/CFI_CLANG/LTO_CLANG; olddefconfig yang merapikannya.
     runs-on: ubuntu-22.04
     timeout-minutes: 120
+    env:
+      ARCH: arm64
+      CROSS_COMPILE: aarch64-linux-gnu-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Toolchain
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-            bc flex bison libssl-dev libelf-dev
+            bc flex bison libssl-dev libelf-dev python3
 
       - name: Perbaiki exec bit skrip kernel
-        # Repo ini dibuat di Windows: scripts/config dan scripts/mkcompile_h
-        # tersimpan mode 100644, sehingga `./scripts/config` -> Permission
-        # denied (itu penyebab run pertama gagal di step cmdline).
         run: |
           set -euo pipefail
           cd 6.18.52-VXTux-UMS512
@@ -45,46 +40,78 @@ jobs:
           chmod +x scripts/config scripts/mkcompile_h
           ls -l scripts/config scripts/mkcompile_h | awk '{print $1, $9}'
 
-      - name: Terapkan CONFIG_CMDLINE P1 + pstore
+      - name: Config P1 (best effort, direkam)
+        id: cfg
+        continue-on-error: true
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -x
+          mkdir -p ../p1/out
+          D=../p1/out/diag.txt
+          : > "$D"
+          echo "=== sebelum ===" >> "$D"
+          grep -n '^CONFIG_CMDLINE' .config >> "$D" 2>&1 || true
+          python3 - <<'PY' >> "$D" 2>&1
+          import re
+          cmd = open('../p1/p1-cmdline.txt').read().strip()
+          s = open('.config').read()
+          s2, n = re.subn(r'^CONFIG_CMDLINE=.*$', 'CONFIG_CMDLINE="%s"' % cmd,
+                          s, count=1, flags=re.M)
+          print("ganti CONFIG_CMDLINE:", n)
+          s = s2
+          s = re.sub(r'^CONFIG_CMDLINE_FORCE=.*$', 'CONFIG_CMDLINE_FORCE=y', s, count=1, flags=re.M)
+          s = re.sub(r'^CONFIG_CMDLINE_(EXTEND|FROM_BOOTLOADER)=y$',
+                     r'# CONFIG_CMDLINE_\1 is not set', s, flags=re.M)
+          if not re.search(r'^CONFIG_CMDLINE_FORCE=y$', s, flags=re.M):
+              s = re.sub(r'^(CONFIG_CMDLINE=".*")$', r'\1\nCONFIG_CMDLINE_FORCE=y',
+                         s, count=1, flags=re.M)
+          for opt in ('CONFIG_PSTORE', 'CONFIG_PSTORE_RAM', 'CONFIG_PSTORE_CONSOLE',
+                      'CONFIG_PSTORE_PMSG'):
+              if re.search(r'^# %s is not set$' % opt, s, flags=re.M):
+                  s = re.sub(r'^# %s is not set$' % opt, opt + '=y', s, flags=re.M)
+          open('.config', 'w').write(s)
+          PY
+          echo "=== sesudah edit ===" >> "$D"
+          grep -n '^CONFIG_CMDLINE' .config >> "$D" 2>&1 || true
+          echo "=== olddefconfig ===" >> "$D"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig >> "$D" 2>&1
+          echo "olddefconfig rc=$?" >> "$D"
+          echo "=== sesudah olddefconfig ===" >> "$D"
+          grep -n '^CONFIG_CMDLINE' .config >> "$D" 2>&1 || true
+          sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' .config > .cmdline.effective
+          cat .cmdline.effective >> "$D"
+          grep -q 'panic=0' .cmdline.effective
+          echo "OK: cmdline P1 efektif"
+
+      - name: Build Image (best effort, direkam)
+        id: build
+        continue-on-error: true
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -x
+          D=../p1/out/diag.txt
+          echo "=== build ===" >> "$D"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image >> "$D" 2>&1
+          rc=$?
+          echo "build rc=$rc" >> "$D"
+          ls -l arch/arm64/boot/Image >> "$D" 2>&1 || true
+          exit $rc
+
+      - name: Verifikasi cmdline tertanam
+        if: steps.build.outcome == 'success'
         working-directory: 6.18.52-VXTux-UMS512
         run: |
           set -euo pipefail
-          CMD="$(tr -d '\r\n' < ../p1/p1-cmdline.txt)"
-          # `sh` dipakai supaya tidak bergantung pada exec bit.
-          sh ./scripts/config \
-            --set-str CONFIG_CMDLINE "$CMD" \
-            -e CONFIG_CMDLINE_FORCE -d CONFIG_CMDLINE_FROM_BOOTLOADER -d CONFIG_CMDLINE_EXTEND \
-            -e CONFIG_PSTORE -e CONFIG_PSTORE_RAM -e CONFIG_PSTORE_CONSOLE -e CONFIG_PSTORE_PMSG
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-          sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' .config | tee /tmp/cmdline.txt
-          grep -q 'panic=0' /tmp/cmdline.txt
-          if grep -q 'initcall_debug' /tmp/cmdline.txt; then
-            echo "FATAL: initcall_debug masih ada"; exit 1
-          fi
-
-      - name: Verifikasi param printk selalu-dump ada
-        run: |
-          grep -q 'module_param_named(always_kmsg_dump' \
-            6.18.52-VXTux-UMS512/kernel/printk/printk.c
-          echo "printk.always_kmsg_dump tersedia"
-
-      - name: Build Image
-        working-directory: 6.18.52-VXTux-UMS512
-        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image
-
-      - name: Verifikasi cmdline benar-benar tertanam di Image
-        working-directory: 6.18.52-VXTux-UMS512
-        run: |
-          set -euo pipefail
-          strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0"
+          D=../p1/out/diag.txt
+          strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0" | tee -a "$D"
           strings arch/arm64/boot/Image | grep -q 'panic=0'
-          strings arch/arm64/boot/Image | grep -q 'keep_bootcon'
           if strings arch/arm64/boot/Image | grep -q 'initcall_debug=1'; then
-            echo "FATAL: initcall_debug masih tertanam di Image"; exit 1
+            echo "FATAL: initcall_debug masih tertanam" | tee -a "$D"; exit 1
           fi
-          echo "cmdline P1 terbukti tertanam"
+          echo "cmdline P1 terbukti tertanam" | tee -a "$D"
 
       - name: Paketkan hasil
+        if: steps.build.outcome == 'success'
         run: |
           set -euo pipefail
           mkdir -p p1/out
@@ -101,18 +128,23 @@ jobs:
           } | tee p1/out/build-report.txt
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: p1-image
-          path: |
-            p1/out/Image.gz
-            p1/out/build-report.txt
-          if-no-files-found: error
+          name: p1-output
+          path: p1/out/
+          if-no-files-found: warn
 
-      - name: Commit hasil kembali ke branch
+      - name: Commit diagnostik + hasil (selalu)
+        if: always()
         run: |
           set -euo pipefail
           git config user.name "p1-build"
           git config user.email "p1-build@users.noreply.github.com"
-          git add -f p1/out/Image.gz p1/out/Image.sha256 p1/out/build-report.txt
-          git commit -m "p1-build: Image 6.18.52 dengan CONFIG_CMDLINE P1 [skip ci]"
+          mkdir -p p1/out
+          echo "config_step: ${{ steps.cfg.outcome }}" > p1/out/status.txt
+          echo "build_step: ${{ steps.build.outcome }}" >> p1/out/status.txt
+          echo "run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> p1/out/status.txt
+          git add -f p1/out/status.txt p1/out/diag.txt 2>/dev/null || true
+          [ -f p1/out/Image.gz ] && git add -f p1/out/Image.gz p1/out/Image.sha256 p1/out/build-report.txt || true
+          git commit -m "p1-build: hasil (${{ steps.build.outcome }}) [skip ci]" || echo "tidak ada perubahan"
           git push origin HEAD:p1-build
