@@ -104,7 +104,8 @@ jobs:
           set -euo pipefail
           D=../p1/out/diag.txt
           strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0" | tee -a "$D"
-          strings arch/arm64/boot/Image | grep -q 'panic=0'
+          strings arch/arm64/boot/Image | grep -q 'panic=15'
+          strings arch/arm64/boot/Image | grep -q 'hardlockup_panic=1'
           if strings arch/arm64/boot/Image | grep -q 'initcall_debug=1'; then
             echo "FATAL: initcall_debug masih tertanam" | tee -a "$D"; exit 1
           fi
