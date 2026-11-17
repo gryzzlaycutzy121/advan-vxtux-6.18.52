@@ -133,6 +133,7 @@
 #define LR_REASON_PANIC		1U	/* ditulis dari notifier panic */
 #define LR_REASON_RAM		2U	/* hanya di region RAM */
 #define LR_REASON_PREVBOOT	3U	/* panjang dari boot sebelumnya (RAM) */
+#define LR_REASON_DUMP		4U	/* kmsg_dump non-panic: oops/reboot/halt */
 
 /*
  * Header 56 byte.  Disimpan little endian apa adanya (arm64 LE), sehingga
@@ -515,6 +516,36 @@ static struct notifier_block lr_panic_nb = {
 	.notifier_call	= lr_panic_notify,
 };
 
+/* ---- kmsg_dump: semua alasan dump, bukan hanya panic ------------------ */
+
+/*
+ * panic_notifier_list hanya menyala untuk panic.  Oops/WARN yang tidak
+ * mem-panic, reboot bersih, dan emergency_restart tidak pernah memanggilnya,
+ * jadi region RAM tetap kosong justru pada kasus yang paling sulit dipotret:
+ * boot yang mati karena oops yang ditelan atau karena watchdog.
+ *
+ * kmsg_dumper dipanggil inti printk untuk SETIAP alasan (OOPS, PANIC,
+ * EMERGENCY, REBOOT, SHUTDOWN, SUSPEND, KEXEC, HALT) -- jalur yang sama yang
+ * dipakai pstore/ramoops.  Dengan begitu `printk.always_kmsg_dump=1` punya
+ * sasaran di region RAM 0xAFC00000, dan `spd_dump read_mem 0xAFC00000`
+ * menghasilkan teks pada semua kasus mati, bukan hanya panic.
+ */
+static void lr_kmsg_dump(struct kmsg_dumper *dumper,
+			 enum kmsg_dump_reason reason)
+{
+	u32 why = (reason == KMSG_DUMP_PANIC) ? LR_REASON_PANIC : LR_REASON_DUMP;
+
+	/* Sama seperti jalur panic: jangan pernah memblokir. */
+	if (mutex_trylock(&lr_lock)) {
+		lr_ram_save(why);
+		mutex_unlock(&lr_lock);
+	}
+}
+
+static struct kmsg_dumper lr_dumper = {
+	.dump = lr_kmsg_dump,
+};
+
 /* ---- /proc/vxtuxlog (status; teks lengkap ada di partisi cache) ------ */
 
 static int lr_show(struct seq_file *m, void *v)
@@ -590,6 +621,8 @@ static int __init vxtux_logrec_init(void)
 	}
 
 	atomic_notifier_chain_register(&panic_notifier_list, &lr_panic_nb);
+	/* Semua alasan dump (oops/reboot/halt), bukan hanya panic. */
+	kmsg_dump_register(&lr_dumper);
 
 	lr_task = kthread_run(lr_thread, NULL, "vxtux-log");
 	if (IS_ERR(lr_task)) {
@@ -598,6 +631,7 @@ static int __init vxtux_logrec_init(void)
 		lr_task = NULL;
 		atomic_notifier_chain_unregister(&panic_notifier_list,
 						 &lr_panic_nb);
+		kmsg_dump_unregister(&lr_dumper);
 		vfree(lr_buf);
 		lr_buf = NULL;
 		lr_text = NULL;

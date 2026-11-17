@@ -2684,9 +2684,16 @@ gpu_opp_table: opp-table {
 		 * jejak -- hanya layar yang bisa difoto.
 		 *
 		 * Pembagian 256 KiB (0x40000) dari DT stok, semua pangkat dua:
-		 *   dmesg/oops record  128 KiB (0x20000)  -> 1 zona
-		 *   console            64 KiB (0x10000)
+		 *   dmesg/oops record   64 KiB (0x10000)  -> 1 zona
+		 *   console            128 KiB (0x20000)
 		 *   pmsg                32 KiB (0x8000)
+		 * Zona console dinaikkan 64 -> 128 KiB (2026-11-17, P1) karena
+		 * loglevel=8 + earlycon mencetak paling banyak di 10 detik pertama;
+		 * zona 64 KiB terbukti membungkus (wrap) sebelum boot mencapai init,
+		 * sehingga justru bagian awal yang hilang.  Record 128 -> 64 KiB:
+		 * setelah `initcall_debug` dilepas, ekor dmesg satu boot muat di 64 KiB,
+		 * dan zona console yang lebih besar lebih berguna.
+		 * Ukuran zona WAJIB pangkat dua (fs/pstore/ram_core.c menolak yang lain).
 		 * sisa 32 KiB tetap bebas.  CONFIG_PSTORE_RAM=y,
 		 * CONFIG_PSTORE_CONSOLE=y, CONFIG_PSTORE_PMSG=y sudah aktif.
 		 * panic=15 di cmdline melakukan warm reboot, sehingga record dari
@@ -2696,8 +2703,8 @@ gpu_opp_table: opp-table {
 		ramoops: ramoops@fff80000 {
 			compatible = "ramoops";
 			reg = <0 0xfff80000 0 0x00040000>;
-			record-size = <0x20000>;
-			console-size = <0x10000>;
+			record-size = <0x10000>;
+			console-size = <0x20000>;
 			pmsg-size = <0x8000>;
 			no-map;
 		};

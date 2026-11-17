@@ -1,0 +1,103 @@
+name: p1-build
+
+# Build Image 6.18.52 dengan CONFIG_CMDLINE P1 (panic=0, tanpa initcall_debug),
+# lalu COMMIT hasilnya kembali ke branch ini sebagai p1/out/Image.gz supaya bisa
+# diambil dengan `git fetch` (artefak Actions butuh token untuk diunduh).
+#
+# Dipicu oleh push ke branch p1-build. Commit balik memakai [skip ci] agar
+# tidak memicu loop.
+
+on:
+  push:
+    branches: [p1-build]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            bc flex bison libssl-dev libelf-dev
+
+      - name: Terapkan CONFIG_CMDLINE P1 + pstore
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -euo pipefail
+          CMD="$(tr -d '\r\n' < ../p1/p1-cmdline.txt)"
+          ./scripts/config \
+            --set-str CONFIG_CMDLINE "$CMD" \
+            -e CONFIG_CMDLINE_FORCE -d CONFIG_CMDLINE_FROM_BOOTLOADER -d CONFIG_CMDLINE_EXTEND \
+            -e CONFIG_PSTORE -e CONFIG_PSTORE_RAM -e CONFIG_PSTORE_CONSOLE -e CONFIG_PSTORE_PMSG
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          sed -n 's/^CONFIG_CMDLINE="\(.*\)"$/\1/p' .config | tee /tmp/cmdline.txt
+          grep -q 'panic=0' /tmp/cmdline.txt
+          if grep -q 'initcall_debug' /tmp/cmdline.txt; then
+            echo "FATAL: initcall_debug masih ada"; exit 1
+          fi
+
+      - name: Verifikasi param printk selalu-dump ada
+        run: |
+          grep -q 'module_param_named(always_kmsg_dump' \
+            6.18.52-VXTux-UMS512/kernel/printk/printk.c
+          echo "printk.always_kmsg_dump tersedia"
+
+      - name: Build Image
+        working-directory: 6.18.52-VXTux-UMS512
+        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image
+
+      - name: Verifikasi cmdline benar-benar tertanam di Image
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -euo pipefail
+          strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0"
+          strings arch/arm64/boot/Image | grep -q 'panic=0'
+          strings arch/arm64/boot/Image | grep -q 'keep_bootcon'
+          if strings arch/arm64/boot/Image | grep -q 'initcall_debug=1'; then
+            echo "FATAL: initcall_debug masih tertanam di Image"; exit 1
+          fi
+          echo "cmdline P1 terbukti tertanam"
+
+      - name: Paketkan hasil
+        run: |
+          set -euo pipefail
+          mkdir -p p1/out
+          IMG=6.18.52-VXTux-UMS512/arch/arm64/boot/Image
+          gzip -9 -c "$IMG" > p1/out/Image.gz
+          ( cd p1/out && sha256sum Image.gz > Image.sha256 )
+          {
+            echo "kernelrelease: $(make -s -C 6.18.52-VXTux-UMS512 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- kernelrelease)"
+            echo "image_raw_size: $(stat -c%s "$IMG")"
+            echo "image_gz_size: $(stat -c%s p1/out/Image.gz)"
+            echo "compiler: $(aarch64-linux-gnu-gcc --version | head -1)"
+            echo "cmdline: $(tr -d '\r\n' < p1/p1-cmdline.txt)"
+            echo "commit: ${GITHUB_SHA}"
+          } | tee p1/out/build-report.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p1-image
+          path: |
+            p1/out/Image.gz
+            p1/out/build-report.txt
+          if-no-files-found: error
+
+      - name: Commit hasil kembali ke branch
+        run: |
+          set -euo pipefail
+          git config user.name "p1-build"
+          git config user.email "p1-build@users.noreply.github.com"
+          git add -f p1/out/Image.gz p1/out/Image.sha256 p1/out/build-report.txt
+          git commit -m "p1-build: Image 6.18.52 dengan CONFIG_CMDLINE P1 [skip ci]"
+          git push origin HEAD:p1-build

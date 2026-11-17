@@ -1,0 +1,88 @@
+name: p1-build
+
+# Build kernel P1 (panic=0, tanpa initcall_debug) + boot image.
+# Dijalankan manual: Actions -> p1-build -> Run workflow.
+#
+# Kenapa di CI: kbuild butuh host compiler POSIX. Di mesin Windows ini tidak
+# ada (MSYS64 kosong, tanpa WSL, tanpa Docker), dan `HOSTCC=clang` (target
+# msvc) gagal di `sys/types.h`, sedangkan mingw gcc gagal di kbuild
+# (`mkdir` 1-argumen, `getline` tidak ada). Ubuntu runner sudah memenuhi semua.
+
+on:
+  workflow_dispatch:
+    inputs:
+      panic:
+        description: "nilai panic= (0 = beku di layar, 15 = warm reboot)"
+        default: "0"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            bc flex bison libssl-dev libelf-dev python3
+
+      - name: Pasang cmdline P1
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -euo pipefail
+          cp .config ../p1/.config.pre-p1
+          CMD="$(tr -d '\r\n' < ../p1/p1-cmdline.txt)"
+          if [ "${{ inputs.panic }}" != "0" ]; then
+            CMD="$(printf '%s' "$CMD" | sed "s/panic=0/panic=${{ inputs.panic }}/")"
+          fi
+          ./scripts/config \
+            --set-str CONFIG_CMDLINE "$CMD" \
+            -e CONFIG_CMDLINE_FORCE -d CONFIG_CMDLINE_FROM_BOOTLOADER -d CONFIG_CMDLINE_EXTEND \
+            -e CONFIG_PSTORE -e CONFIG_PSTORE_RAM -e CONFIG_PSTORE_CONSOLE -e CONFIG_PSTORE_PMSG
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          grep -E '^CONFIG_CMDLINE' .config
+
+      - name: Build Image
+        working-directory: 6.18.52-VXTux-UMS512
+        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image
+
+      - name: Verifikasi param printk selalu-dump ada di tree
+        run: |
+          set -euo pipefail
+          grep -q 'module_param_named(always_kmsg_dump' 6.18.52-VXTux-UMS512/kernel/printk/printk.c
+          echo "printk.always_kmsg_dump tersedia"
+
+      - name: Verifikasi cmdline tertanam di Image
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -euo pipefail
+          # CONFIG_CMDLINE ditanam sebagai string di .rodata; harus terbaca.
+          if ! strings arch/arm64/boot/Image | grep -q "keep_bootcon"; then
+            echo "FATAL: cmdline P1 tidak ditemukan di Image"; exit 1
+          fi
+          strings arch/arm64/boot/Image | grep -m1 "earlycon console=tty0"
+
+      - name: Kemas boot image dari template
+        run: |
+          set -euo pipefail
+          # Header + ramdisk diambil dari boot image yang sudah terbukti load;
+          # hanya blob kernel yang diganti. Tidak butuh out/base_boot dan tidak
+          # butuh python (node sudah ada di runner).
+          TEMPLATE="$(ls -S out/6.18.52-VXTux-UMS512/boot_artix*.img | head -1)"
+          echo "template: $TEMPLATE"
+          node p1/pack_p1.mjs "$TEMPLATE" \
+            6.18.52-VXTux-UMS512/arch/arm64/boot/Image \
+            out/boot_p1.img --cmdline-file p1/p1-cmdline.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p1-kernel
+          path: |
+            6.18.52-VXTux-UMS512/arch/arm64/boot/Image
+            6.18.52-VXTux-UMS512/arch/arm64/boot/dts/sprd/ums512-1h10-vxtux.dtb
+            out/boot_p1.img
+          if-no-files-found: warn
