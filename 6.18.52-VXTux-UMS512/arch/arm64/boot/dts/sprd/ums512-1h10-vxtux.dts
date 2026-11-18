@@ -5528,6 +5528,21 @@
 			compatible = "sprd,vxtuxlog";
 			reg = <0x00 0xafc00000 0x00 0x400000>;
 		};
+
+		/*
+		 * Region RAM 0xAF800000 (4 MiB) untuk trace ring VXTux
+		 * (drivers/vxtux/debug/vxtux_hook.c).  Driver memakai
+		 * early_param vxtuxtrace=<phys> untuk memblock_reserve;
+		 * node ini mendokumentasikan + membuat DT reserved-memory
+		 * parser ikut me-reserve.  TANPA no-map: linear mapping
+		 * tetap ada, __va() aman dipakai driver.  Dipasang tepat
+		 * SEBELUM region vxtuxlog (0xAFC00000) supaya tidak ada
+		 * tabrakan dengan perekam dmesg.
+		 */
+		vxtuxtrace@af800000 {
+			compatible = "sprd,vxtuxtrace";
+			reg = <0x00 0xaf800000 0x00 0x400000>;
+		};
 	};
 
 	memory@80000000 {

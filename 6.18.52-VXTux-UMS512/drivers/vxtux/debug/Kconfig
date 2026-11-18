@@ -105,6 +105,25 @@ config VXTUX_LOGREC
 	  out/tools/baca_logrec.py.  Aktifkan hanya saat mengejar masalah boot,
 	  karena driver ini menulis eMMC terus-menerus.
 
+config VXTUX_HOOK
+	  bool "Trace hook resource API + regmap (deblob compare)"
+	  depends on VXTUX_DRIVERS
+	  depends on KPROBES
+	  depends on KALLSYMS
+	  help
+	  Kprobe pada resource API (clk/regulator/reset/pinctrl/irq/dma/
+	  ioremap/platform_driver_register/driver_probe_device/dev_pm_domain)
+	  dan regmap (regmap_write/read/update_bits_base) untuk menangkap
+	  kontrak software driver (permintaan resource, nilai register,
+	  urutan probe/defer) ke ring RAM yang di-reserve (cmdline
+	  vxtuxtrace=<phys>, default 0xAF800000) yang tahan reset.
+
+	  Kegunaan: membandingkan perilaku driver stok 5.4.210 (golden)
+	  dengan port 6.18.52 (replay) lewat spd_dump read_mem + vxtr_parse.py.
+	  Baca juga drivers/vxtux/debug/vxtux_hook.c (koreksi desain: regmap
+	  bukan mmiotrace yang tidak ada di arm64, bukan kprobe readl/writel
+	  yang inline macro).
+
 config VXTUX_FLIGHTREC
 	bool "Record the boot log to the cache partition (deprecated: pakai VXTUX_LOGREC)"
 	depends on PRINTK

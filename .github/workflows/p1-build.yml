@@ -69,6 +69,14 @@ jobs:
                       'CONFIG_PSTORE_PMSG'):
               if re.search(r'^# %s is not set$' % opt, s, flags=re.M):
                   s = re.sub(r'^# %s is not set$' % opt, opt + '=y', s, flags=re.M)
+          # Trace hook deblob compare: wajib built-in (ada sebelum driver probe).
+          # Symbol baru -> garisnya belum ada di .config, jadi tambahkan;
+          # olddefconfig mempertahankan nilai y yang valid (depends sudah y).
+          if not re.search(r'^CONFIG_VXTUX_HOOK=y$', s, flags=re.M):
+              s = re.sub(r'^# CONFIG_VXTUX_HOOK is not set$', 'CONFIG_VXTUX_HOOK=y',
+                         s, count=1, flags=re.M)
+              if not re.search(r'^CONFIG_VXTUX_HOOK=y$', s, flags=re.M):
+                  s += '\nCONFIG_VXTUX_HOOK=y\n'
           open('.config', 'w').write(s)
           PY
           echo "=== sesudah edit ===" >> "$D"
@@ -120,6 +128,22 @@ jobs:
           fi
           echo "cmdline P1 terbukti tertanam" | tee -a "$D"
 
+      - name: Verifikasi trace hook tertanam
+        if: steps.build.outcome == 'success'
+        working-directory: 6.18.52-VXTux-UMS512
+        run: |
+          set -euo pipefail
+          D=../p1/out/diag.txt
+          # vxtr_init adalah symbol lokal -> ada di System.map (nm -n vmlinux).
+          if ! grep -q ' vxtr_init' System.map; then
+            echo "FATAL: vxtr_init tidak ada di System.map (hook tidak tertanam)" | tee -a "$D"
+            exit 1
+          fi
+          grep -q '^CONFIG_VXTUX_HOOK=y' .config || { \
+            echo "FATAL: CONFIG_VXTUX_HOOK bukan y" | tee -a "$D"; exit 1; }
+          grep -q ' vxtr_emit' System.map
+          echo "trace hook vxtux_hook OK (built-in, kprobe resource+regmap)" | tee -a "$D"
+
       - name: Paketkan hasil
         if: steps.build.outcome == 'success'
         run: |
@@ -128,6 +152,8 @@ jobs:
           IMG=6.18.52-VXTux-UMS512/arch/arm64/boot/Image
           gzip -9 -c "$IMG" > p1/out/Image.gz
           ( cd p1/out && sha256sum Image.gz > Image.sha256 )
+          # System.map: dipakai vxtr_parse.py untuk memetakan caller -> fungsi.
+          cp 6.18.52-VXTux-UMS512/System.map p1/out/System.map
           {
             echo "kernelrelease: $(make -s -C 6.18.52-VXTux-UMS512 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- kernelrelease)"
             echo "image_raw_size: $(stat -c%s "$IMG")"
