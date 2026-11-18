@@ -83,7 +83,8 @@ spd_dump_new.exe --wait 300 exec_addr 0x3ee8 ^
   read_part sysdumpdb 0 0xA00000 b2_sysdumpdb.bin ^
   read_part misc 0 0x100000 b3_misc.bin ^
   read_part miscdata 0 0x100000 b4_miscdata.bin ^
-  read_part metadata 0 0x1000000 b5_metadata.bin
+  read_part metadata 0 0x1000000 b5_metadata.bin ^
+  exit
 if "%KEEP%"=="0" spd_dump_new.exe --wait 120 exec_addr 0x3ee8 fdl fdl1-dl.bin 0x5500 fdl fdl2-dl.bin 0x9efffe00 exec reset
 goto extract
 
@@ -98,7 +99,8 @@ spd_dump_new.exe --wait 300 exec_addr 0x3ee8 ^
   read_part sysdumpdb 0 0xA00000 b2_sysdumpdb.bin ^
   read_part misc 0 0x100000 b3_misc.bin ^
   read_part miscdata 0 0x100000 b4_miscdata.bin ^
-  read_part metadata 0 0x1000000 b5_metadata.bin
+  read_part metadata 0 0x1000000 b5_metadata.bin ^
+  exit
 if "%KEEP%"=="0" spd_dump_new.exe --wait 120 exec_addr 0x3ee8 fdl fdl1-dl.bin 0x5500 fdl fdl2-dl.bin 0x9efffe00 exec reset
 
 :extract
