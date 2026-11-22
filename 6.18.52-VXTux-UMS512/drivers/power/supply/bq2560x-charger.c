@@ -23,6 +23,34 @@
 /* Port 6.18: header sprd_battery_info hidup di drivers/power/supply/sprd/,
  * bukan di include/linux/power/ seperti pada tree donor 5.4. */
 #include "sprd/sprd_battery_info.h"
+/* Port 6.18: enum charger-manager OEM (tree 5.4) tidak ada di upstream
+ * 6.18; nilai disalin apa adanya dari include/linux/power/charger-manager.h
+ * OEM (E:/Advan/out/odm54) supaya perilaku driver tidak berubah.
+ */
+#ifndef CM_FAST_CHARGE_NORMAL_CMD
+enum cm_fast_charge_command {
+	CM_FAST_CHARGE_NORMAL_CMD = 1,
+	CM_FAST_CHARGE_OVP_ENABLE_CMD,
+	CM_FAST_CHARGE_OVP_DISABLE_CMD,
+	CM_FAST_CHARGE_ENABLE_CMD,
+	CM_FAST_CHARGE_DISABLE_CMD,
+	CM_PPS_CHARGE_ENABLE_CMD,
+	CM_PPS_CHARGE_DISABLE_CMD,
+	CM_POWER_PATH_ENABLE_CMD,
+	CM_POWER_PATH_DISABLE_CMD,
+};
+#endif
+
+/* Nilai vendor-specific OEM (UNKNOWN = 0x20, BPP = 0x21, EPP = 0x22);
+ * enum ini dihapus upstream di 6.x. */
+#ifndef POWER_SUPPLY_WIRELESS_CHARGER_TYPE_BPP
+enum power_supply_wireless_charger_type {
+	POWER_SUPPLY_WIRELESS_CHARGER_TYPE_UNKNOWN = 0x20,
+	POWER_SUPPLY_WIRELESS_CHARGER_TYPE_BPP,
+	POWER_SUPPLY_WIRELESS_CHARGER_TYPE_EPP,
+};
+#endif
+
 #include <linux/regmap.h>
 #include <linux/regulator/driver.h>
 #include <linux/regulator/machine.h>
@@ -1655,8 +1683,7 @@ bq2560x_charger_register_vbus_regulator(struct bq2560x_charger_info *info)
 }
 #endif
 
-static int bq2560x_charger_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int bq2560x_charger_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct device *dev = &client->dev;
@@ -1756,7 +1783,8 @@ static int bq2560x_charger_probe(struct i2c_client *client,
 	mutex_lock(&info->lock);
 
 	charger_cfg.drv_data = info;
-	charger_cfg.of_node = dev->of_node;
+	/* 6.18: struct power_supply_config tak punya of_node, pakai fwnode. */
+	charger_cfg.fwnode = dev_fwnode(dev);
 	if (info->role == BQ2560X_ROLE_MASTER_DEFAULT) {
 		info->psy_usb = devm_power_supply_register(dev,
 							   &bq2560x_charger_desc,
@@ -1810,7 +1838,7 @@ static int bq2560x_charger_probe(struct i2c_client *client,
 	info->irq_gpio = of_get_named_gpio(info->dev->of_node, "irq-gpio", 0);
 	if (gpio_is_valid(info->irq_gpio)) {
 		ret = devm_gpio_request_one(info->dev, info->irq_gpio,
-					    GPIOF_DIR_IN, "bq2560x_int");
+					    GPIOD_IN, "bq2560x_int");
 		if (!ret)
 			info->client->irq = gpio_to_irq(info->irq_gpio);
 		else
@@ -1875,14 +1903,12 @@ static void bq2560x_charger_shutdown(struct i2c_client *client)
 	}
 }
 
-static int bq2560x_charger_remove(struct i2c_client *client)
+static void bq2560x_charger_remove(struct i2c_client *client)
 {
 	struct bq2560x_charger_info *info = i2c_get_clientdata(client);
 
 	cancel_delayed_work_sync(&info->wdt_work);
 	cancel_delayed_work_sync(&info->otg_work);
-
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_PM_SLEEP)
