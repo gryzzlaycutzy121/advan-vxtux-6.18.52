@@ -124,6 +124,15 @@ config I2C_SPRD
 	help
 	  If you say yes to this option, support will be included for the
 	  Spreadtrum I2C interface.
+
+config I2C_SPRD_HW
+	tristate "Spreadtrum hardware I2C interface (UMS512 hw block)"
+	depends on I2C=y && (ARCH_SPRD || COMPILE_TEST)
+	depends on COMMON_CLK
+	help
+	  Driver untuk blok hardware I2C Unisoc yang pada tree OEM 5.4
+	  berada di modul terpisah i2c_sprd_hw.ko. Port ke 6.18 agar
+	  Address ID / throughput controller tetap tersedia.
 	
 config I2C_VERSATILE
 	tristate "ARM Versatile/Realview I2C bus support"

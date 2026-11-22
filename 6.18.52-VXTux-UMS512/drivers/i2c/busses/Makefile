@@ -22,6 +22,9 @@ i2c-designware-pci-y					:= i2c-designware-pcidrv.o
 obj-$(CONFIG_I2C_GPIO)		+= i2c-gpio.o
 obj-$(CONFIG_I2C_CBUS_GPIO)	+= i2c-cbus-gpio.o
 obj-$(CONFIG_I2C_SPRD)		+= i2c-sprd.o
+# Port VXTux: hardware I2C block Unisoc (stok: i2c_sprd_hw.ko), terpisah
+# dari i2c-sprd.c. Donor Veynamer @ b9a76872.
+obj-$(CONFIG_I2C_SPRD_HW)	+= i2c-sprd-hw.o
 obj-$(CONFIG_I2C_VERSATILE)	+= i2c-versatile.o
 obj-$(CONFIG_I2C_MPC)		+= i2c-mpc.o
 obj-$(CONFIG_I2C_VIRTIO)	+= i2c-virtio.o
