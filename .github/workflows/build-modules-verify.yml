@@ -1,6 +1,11 @@
 name: Build modules for verify
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/tag to build (kosong = branch yang di-dispatch)'
+        required: false
+        default: ''
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -8,7 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: test1
+          # Build branch yang benar-benar di-dispatch. Sebelumnya hardcode 'test1'
+          # sehingga verifikasi selalu memakai branch basi, bukan branch kerja.
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref_name }}
           fetch-depth: 1
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install -y build-essential gcc-aarch64-linux-gnu libncurses-dev flex bison bc libssl-dev libelf-dev
