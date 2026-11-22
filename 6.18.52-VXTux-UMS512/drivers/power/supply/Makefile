@@ -77,6 +77,9 @@ obj-$(CONFIG_CHARGER_LP8727)	+= lp8727_charger.o
 obj-$(CONFIG_CHARGER_LP8788)	+= lp8788-charger.o
 obj-$(CONFIG_CHARGER_GPIO)	+= gpio-charger.o
 obj-$(CONFIG_CHARGER_MANAGER)	+= charger-manager.o
+# Unisoc/port: driver charger BQ2560X (stok bq2560x_charger.ko) — graft dari
+# donor Veynamer/android_kernel_unisoc_ums512 @ b9a76872, diadaptasi 6.18.
+obj-$(CONFIG_CHARGER_BQ2560X)	+= bq2560x-charger.o
 obj-$(CONFIG_CHARGER_LT3651)	+= lt3651-charger.o
 obj-$(CONFIG_CHARGER_LTC4162L)	+= ltc4162-l-charger.o
 obj-$(CONFIG_CHARGER_MAX14577)	+= max14577_charger.o

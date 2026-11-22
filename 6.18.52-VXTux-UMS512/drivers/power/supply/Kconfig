@@ -568,7 +568,17 @@ config CHARGER_MANAGER
 	  system. The charger-manager also can monitor charging status in
 	  runtime and in suspend-to-RAM by waking up the system periodically
 	  with help of suspend_again support.
-	
+
+# Port VXTux: driver charger BQ2560X bawaan ADVAN (stok: bq2560x_charger.ko).
+# Graft dari donor Veynamer/android_kernel_unisoc_ums512 @ b9a76872.
+config CHARGER_BQ2560X
+	tristate "TI BQ2560X switch-mode charger (Unisoc sharkl5pro)"
+	depends on I2C && GPIOLIB && REGULATOR
+	select REGMAP_I2C
+	help
+	  Driver untuk charger BQ2560X yang dipakai ADVAN Tab VX Lite
+	  (UMS512/sharkl5pro). Menggantikan blob stok bq2560x_charger.ko.
+
 config CHARGER_LT3651
 	tristate "Analog Devices LT3651 charger"
 	depends on GPIOLIB
