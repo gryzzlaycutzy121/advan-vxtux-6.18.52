@@ -50,4 +50,7 @@ source "drivers/staging/vme_user/Kconfig"
 
 source "drivers/staging/gpib/Kconfig"
 
+# Port VXTux 6.18: backport ION Memory Manager (ABI /dev/ion) dari OEM 5.4
+source "drivers/staging/android/ion/Kconfig"
+
 endif # STAGING
