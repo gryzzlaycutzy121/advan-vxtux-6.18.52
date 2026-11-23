@@ -5,15 +5,16 @@ hasil RE `assembly_160.zip` (160/160 modul punya symtab runtime, total 77.791 si
 tree port `E:/vxtux_build_repo/6.18.52-VXTux-UMS512` branch `p1-build`,
 CI fork `gryzzlaycutzy121/advan-vxtux-6.18.52` (workflow `build-modules-verify.yml`).
 
-**Run verifikasi terbaru: `45100242777` → `success` → 241 `.ko` ter-build dari branch `p1-build`
-(naik dari 240 pada run sebelumnya `45074672882`).**
+**Run verifikasi terbaru: `45106765053` → `success` → 242 `.ko` ter-build dari branch `p1-build`
+(riwayat: `45074672882` 240 `.ko` → `45100242777` 241 `.ko` + `ion_cma_heap.ko` → `45106765053` 242 `.ko`
++ `sprd_autotest_pinctrl.ko`).**
 
 ## 1. Peta kesenjangan (160 modul stok vs port 6.18) — setelah sesi backport ION
 
 | Kategori | Jumlah | Dasar bukti |
 |---|---|---|
-| **KO-TERBANGUN** (nama sama, `.ko` ada di artifact CI) | **71** | `built-kos` run 45100242777 (termasuk `ion_cma_heap.ko`) |
-| **PORT-SOURCE** (source ada, nama/arsitektur berbeda) | **64** | 42 di `drivers/vxtux/` (RE-port), sisanya subtree rename (musb_sprd_vxtux, sprd_dcam, sprd_drm, sprd-iommu, mmdvfs…) |
+| **KO-TERBANGUN** (nama sama, `.ko` ada di artifact CI) | **72** | `built-kos` run 45106765053 (termasuk `ion_cma_heap.ko`, `sprd_autotest_pinctrl.ko`) |
+| **PORT-SOURCE** (source ada, nama/arsitektur berbeda) | **63** | 42 di `drivers/vxtux/` (RE-port), sisanya subtree rename (musb_sprd_vxtux, sprd_dcam, sprd_drm, sprd-iommu, mmdvfs…) |
 | **UPSTREAM/GENERIC** (fitur kernel 6.18, nama berbeda) | **14** | arc4, ghash_ce, sha1_ce, kfifo_buf, ledtrig_pattern, mmc_swcq, thermal_generic_adc, twofish_common, twofish_generic, zram, zsmalloc, sprd_charger_manager, sprd_cp_dvfs, unisoc_iommu |
 | **BFKRT milik sendiri** (belum di-port ke 6.18) | **3** | berry_symdump, berry_m_virtkrn_obs, berry_lkvm (+ berry_trig_all, berryfetcher_kernel) |
 | **SISA FUNGSIONAL** | **0** | `ion_cma_heap` ✅ ter-build, `pinctrl` ✅ ter-port (handler autotest) |
@@ -43,7 +44,8 @@ Keduanya (`bq2560x`, `i2c_sprd_hw`) sebelumnya **hanya ada simbol config** tanpa
 | `45092394909` | gagal | ION: `dma_buf_attachment.dma_map_attrs` dihapus upstream |
 | `45097266443` | gagal | modpost: `cma_get_base`/`cma_get_size` belum di-export dari `mm/cma.c` |
 | `45100242777` | **sukses, 241 `.ko`** | `ion_cma_heap.ko` terbentuk |
-| `45104148090` | (port pinctrl) | — |
+| `45104148090` | gagal | pinctrl: `struct platform_device` tak lengkap (kurang `linux/platform_device.h`) |
+| `45106765053` | **sukses, 242 `.ko`** | `sprd_autotest_pinctrl.ko` terbentuk, `depends=sprd_autotest_core` |
 
 ## 3. Ekuivalensi terverifikasi (stok → port, nama berbeda)
 
@@ -89,7 +91,7 @@ Semua angka modul ter-build di dokumen ini berasal dari run yang benar-benar mem
 
 - Bahan RE: `assembly_160.zip` (`dis/` 160 file, `modsyms/` 160 simpanan simbol, `INDEX_160.md`, `SUMMARY_160.md`, `README.md`).
 - Data klasifikasi: `scratch/gap_final.json` (160 baris verdict), `scratch/gap_srcverify.json`, `scratch/pat_map.json`.
-- Artifact build terbaru: run CI `45100242777` → artifact `built-kos` (241 `.ko`).
+- Artifact build terbaru: run CI `45106765053` → artifact `built-kos` (242 `.ko`).
 - Peta modul stok→`.ko` lokal: `scratch/map_ko.txt` (160 baris).
 - Donor: `Veynamer/android_kernel_unisoc_ums512` ref `b9a76872` (path sumber ter-embed di `.ko` stok)
   + `E:/Advan/out/odm54` (tree OEM 5.4 untuk backport ION).
