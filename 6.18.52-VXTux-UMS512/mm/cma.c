@@ -57,7 +57,7 @@ const char *cma_get_name(const struct cma *cma)
  * accessor di atas harus diekspor ke modul. */
 EXPORT_SYMBOL_GPL(cma_get_base);
 EXPORT_SYMBOL_GPL(cma_get_size);
-EXPORT_SYMBOL_GPL(cma_get_name);
+/* cma_get_name sudah di-export oleh drivers/vxtux/vendor_abi/vendor_abi_exports.c */
 
 static unsigned long cma_bitmap_aligned_mask(const struct cma *cma,
 					     unsigned int align_order)
