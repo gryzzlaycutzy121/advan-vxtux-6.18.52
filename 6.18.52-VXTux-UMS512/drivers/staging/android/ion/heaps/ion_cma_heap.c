@@ -17,11 +17,12 @@
 #include <uapi/linux/sprd_ion.h>
 #include <linux/sprd_ion.h>
 #include <linux/genalloc.h>
+#include <linux/dma-map-ops.h>
 #include <linux/types.h>
 #include <linux/mutex.h>
 #include <linux/jiffies.h>
 #include <linux/workqueue.h>
-#include "ion_ipc_trusty.h"
+#include <linux/ion_ipc_trusty.h>
 #include "cma.h"
 
 struct ion_cma_heap {

@@ -9,7 +9,8 @@
 #include <linux/slab.h>
 #include <linux/swap.h>
 #include <linux/sched/signal.h>
-#include <linux/ion.h>
+#include <linux/mm.h>
+#include <linux/plist.h>
 
 #include "ion_page_pool.h"
 
