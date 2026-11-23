@@ -18,6 +18,14 @@
 #include <linux/dma-buf.h>
 #include <linux/scatterlist.h>
 
+/* Nama heap ION khusus Unisoc (parity dengan header OEM 5.4
+ * include/linux/sprd_ion.h); dipakai ion_cma_heap.ko untuk mendaftarkan
+ * heap DRM/FB/CAM/VDSP. */
+#define ION_DRM_HEAP_NAME        "widevine"
+#define ION_FB_HEAP_NAME         "framebuffer"
+#define ION_FACEID_HEAP_NAME     "faceid"
+#define ION_VDSP_HEAP_NAME       "vdsp"
+
 int sprd_ion_is_reserved(int fd, struct dma_buf *dmabuf,
 					bool *reserved);
 

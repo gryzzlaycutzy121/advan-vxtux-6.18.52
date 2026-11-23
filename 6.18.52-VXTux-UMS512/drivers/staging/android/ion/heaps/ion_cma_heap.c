@@ -117,9 +117,9 @@ static int ion_cma_create_pool(struct ion_cma_heap *cma_heap)
 	unsigned long align;
 	int ret;
 
-	widevine_size = cma_heap->cma->count << PAGE_SHIFT;
+	widevine_size = cma_get_size(cma_heap->cma);
 
-	widevine_base = PFN_PHYS(cma_heap->cma->ranges[0].base_pfn);
+	widevine_base = cma_get_base(cma_heap->cma);
 	pr_debug("%s, widevine paddr: 0x%llx, widevine size: %lu\n", __func__, (u64)widevine_base, widevine_size);
 	nr_pages = widevine_size >> PAGE_SHIFT;
 	align = get_order(widevine_size);
