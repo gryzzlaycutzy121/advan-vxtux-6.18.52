@@ -20,3 +20,15 @@ config SPRD_AUTOTEST_GPIO
 	  menulis balik bit 17.
 
 	  Port dari blob vendor 5.4 `gpio.ko`.
+
+config SPRD_AUTOTEST_PINCTRL
+	tristate "Spreadtrum autotest pinctrl handler"
+	depends on SPRD_AUTOTEST && PINCTRL
+	help
+	  Handler cmd 0xc0044100 (_IOWR('A', 0, 4)): argumen ioctl berupa
+	  pointer ke u32 gpio index.  State pinctrl "gpio_%d" dicari lewat
+	  pinctrl_lookup_state() lalu dipilih dengan pinctrl_select_state().
+	  Node DT "sprd,autotest" dengan phandle "sprd,pinctrl" dipakai
+	  saat register (handler->init).
+
+	  Port dari blob vendor 5.4 `pinctrl.ko`.
