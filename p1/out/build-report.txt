@@ -1,6 +1,6 @@
 kernelrelease: 6.18.52-VXTux-UMS512-artix
 image_raw_size: 48644608
-image_gz_size: 19498440
+image_gz_size: 19502279
 compiler: aarch64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
 cmdline: earlycon console=ttyS1,115200n8 loglevel=8 nokaslr ramdisk_size=16384 rdinit=/vxtux/init loop.max_part=7 printk.devkmsg=on panic=15 softlockup_panic=1 hardlockup_panic=1 clk_ignore_unused pd_ignore_unused printk.always_kmsg_dump=1 vxtuxfb=0x9d000000,0x9e000000 vxtuxlog=0xAFC00000 vxtuxtrace=0xAF800000 androidboot.console=ttyS1 androidboot.hardware=ums512_1h10 androidboot.slot_suffix=_a androidboot.serialno=0123456789ABCDEF androidboot.selinux=permissive androidboot.init_fatal_panic=true
-commit: 5c27db5473a5b127402b4b281a82b1af632f91ee
+commit: 1154b366dedd77de63bf685bb34c144e8b35b749
