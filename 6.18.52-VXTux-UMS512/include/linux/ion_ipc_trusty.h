@@ -16,6 +16,21 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 
+/*
+ * Wire format expected by the TEE (parity dengan header OEM 5.4
+ * drivers/staging/android/ion/heaps/ion_ipc_trusty.h). Dipakai ion_cma_heap.ko
+ * untuk perintah firewall DRM (TA_LOCK_DRM_MEM / TA_UNLOCK_DRM_MEM).
+ */
+struct ion_message {
+	u32 cmd;
+	u64 payload[2];
+};
+
+enum ion_command {
+	TA_LOCK_DRM_MEM = 8,
+	TA_UNLOCK_DRM_MEM = 9
+};
+
 #if IS_ENABLED(CONFIG_ION_IPC_TRUSTY)
 
 int ion_tipc_init(void);
