@@ -52,6 +52,13 @@ const char *cma_get_name(const struct cma *cma)
 	return cma->name;
 }
 
+/* VXTux/ION: heap CMA Unisoc (ion_cma_heap.ko) butuh akses base/size
+ * region CMA dari modul; struct cma sendiri opaque di 6.18 sehingga
+ * accessor di atas harus diekspor ke modul. */
+EXPORT_SYMBOL_GPL(cma_get_base);
+EXPORT_SYMBOL_GPL(cma_get_size);
+EXPORT_SYMBOL_GPL(cma_get_name);
+
 static unsigned long cma_bitmap_aligned_mask(const struct cma *cma,
 					     unsigned int align_order)
 {

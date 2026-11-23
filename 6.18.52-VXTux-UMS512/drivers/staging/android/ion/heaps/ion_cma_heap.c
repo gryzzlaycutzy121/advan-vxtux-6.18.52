@@ -25,6 +25,9 @@
 #include <linux/ion_ipc_trusty.h>
 #include "cma.h"
 
+MODULE_DESCRIPTION("ION CMA heap (Unisoc DRM/widevine firewall) - backport OEM 5.4 ke 6.18");
+MODULE_LICENSE("GPL");
+
 struct ion_cma_heap {
 	struct ion_heap heap;
 	struct cma *cma;
