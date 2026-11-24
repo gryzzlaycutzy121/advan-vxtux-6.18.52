@@ -16,9 +16,15 @@
  *   [3] state_en_off  [4] irq_clr_off    [5] mode_ctrl_off
  *   [6] state_en_bit0 [7] state_en_bit1  [8] state_mask
  *   [9] irq_pending_mask
- *   sc2730 : 2  5  0  0x0c 0x10 0x14 1    2    0x1f 0x3ff
- *   sc2721 : 1  11 6  0x00 0x04 0x08 0x20 0x40 0x08 0x7f
- *   ump9620: 3  1  12 0x0c 0x10 0x14 1    2    0x1f 0x3ff
+ *   sc2730 : 2  5  0  0x0c 0x10 0x04 1    2    0x1f 0x3ff
+ *   sc2721 : 1  11 6  0x00 0x04 0x08 0x20 0x40 0x0f 0x7f
+ *   ump9620: 3  1  11 0x0c 0x10 0x04 1    2    0x1f 0x3ff
+ *   (ERRATA 2026-11-25: RE awal salah baca `ldr w8,[x8,#20]` — #20 adalah
+ *    byte-offset field [5] mode_ctrl_off, BUKAN nilai register. Nilai asli
+ *    dari .rodata @0x5a8/0x5d0/0x5f8 = 0x04/0x08/0x04; sebelumnya 0x14/
+ *    0x08(bit)/12/0x14. Verifikasi: stock source SC27XX_MODE=0x04,
+ *    SC2721_MODE=0x08, SC2721_STATE_MASK=GENMASK(3,0)=0x0f,
+ *    UMP9620_EFUSE_CC2_SHIFT=11 — cocok 100% dengan binary.)
  * Pemakaian (offset pemanggilan disasm):
  *   [0] probe mode-bit & rtrim kondisi & jalur polaritas IRQ;
  *   [1]/[2] shift kalibrasi CC1/CC2 dari efuse (probe 0x204/0x2b0);
@@ -153,7 +159,7 @@ static const struct sc27xx_typec_data sc2730_data = {
 	.cc2_shift	= 0,
 	.state_en_off	= 0x0c,
 	.irq_clr_off	= 0x10,
-	.mode_ctrl_off	= 0x14,
+	.mode_ctrl_off	= 0x04,
 	.state_en_bit0	= 1,
 	.state_en_bit1	= 2,
 	.state_mask	= 0x1f,
@@ -169,17 +175,17 @@ static const struct sc27xx_typec_data sc2721_data = {
 	.mode_ctrl_off	= 0x08,
 	.state_en_bit0	= 0x20,
 	.state_en_bit1	= 0x40,
-	.state_mask	= 0x08,
+	.state_mask	= 0x0f,
 	.irq_pending_mask = 0x7f,
 };
 
 static const struct sc27xx_typec_data ump9620_data = {
 	.type		= 0x3,
 	.cc1_shift	= 1,
-	.cc2_shift	= 12,
+	.cc2_shift	= 11,
 	.state_en_off	= 0x0c,
 	.irq_clr_off	= 0x10,
-	.mode_ctrl_off	= 0x14,
+	.mode_ctrl_off	= 0x04,
 	.state_en_bit0	= 1,
 	.state_en_bit1	= 2,
 	.state_mask	= 0x1f,
