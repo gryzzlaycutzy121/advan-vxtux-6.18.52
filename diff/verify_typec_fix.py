@@ -16,11 +16,15 @@ EXPECT = {
 FIELDS = ["type","cc1_shift","cc2_shift","state_en_off","irq_clr_off","mode_ctrl_off","state_en_bit0","state_en_bit1","state_mask","irq_pending_mask"]
 
 def gh(args):
+    r = subprocess.run([GH]+args, capture_output=True)
+    return r.stdout, r.stderr, r.returncode
+
+def gh_text(args):
     r = subprocess.run([GH]+args, capture_output=True, text=True)
     return r.stdout, r.stderr, r.returncode
 
 def get_artifact(run):
-    out,_,_ = gh(["api", f"repos/{REPO}/actions/runs/{run}/artifacts"])
+    out,_,_ = gh_text(["api", f"repos/{REPO}/actions/runs/{run}/artifacts"])
     arts = json.loads(out)
     for a in arts["artifacts"]:
         if a["name"] == "built-kos":
@@ -28,14 +32,16 @@ def get_artifact(run):
     return None, None
 
 def download(url, dest):
-    # urllib pakai token? gh api output url publik; coba urllib
+    # gh api output biner langsung ke file (tanpa decode teks)
     try:
-        req = urllib.request.Request(url, headers={"User-Agent":"berry-verify"})
-        with urllib.request.urlopen(req, timeout=300) as r, open(dest,"wb") as f:
-            shutil.copyfileobj(r, f)
-        return True
+        out, err, rc = gh(["api", f"repos/{REPO}/actions/artifacts/{url}/zip"])
+        if rc == 0:
+            open(dest,"wb").write(out)
+            return True
+        print(f"gh api fail rc={rc}: {err[:200]}")
+        return False
     except Exception as e:
-        print(f"urllib fail: {e}")
+        print(f"download fail: {e}")
         return False
 
 def rodata_table(ko_path):
@@ -64,13 +70,8 @@ def main():
     print(f"artifact built-kos id={aid}")
     if not aid: print("NO ARTIFACT"); return 1
     zpath = os.path.join(WORK, f"_typec_verify_{RUN}.zip")
-    if not download(url, zpath):
-        # fallback: gh api > file
-        out,err,rc = gh(["api", f"repos/{REPO}/actions/artifacts/{aid}/zip"])
-        if rc == 0:
-            open(zpath,"wb").write(out.encode("latin1"))
-        else:
-            print("download fail"); return 1
+    if not download(aid, zpath):
+        print("download gagal"); return 1
     with zipfile.ZipFile(zpath) as z:
         names = [n for n in z.namelist() if "sc27xx_typec.ko" in n]
         print("ko in artifact:", names)

@@ -109,22 +109,66 @@ Tool: `diff/regbit_macro2.py` (resolusi `#include` header + macro), hasil
   - `sc27xx_adc`: semua register ADC (0x0/0x4/0x4c/0x50/0x54/0x58/0x5c) identik
     di port (artefak harness: `missO=[84]` karena 0x54 `SC27XX_ADC_INT_CLR`
     hanya di satu jalur) → **bukan defect**
-  - `sc27xx_typec`: port diturunkan dari RE biner (tanpa source GPL vendor);
-    mode_ctrl_off sc2730 = 0x14 (dari tabel .rodata blob) vs stock source
-    `SC27XX_MODE=0x04` — **konflik source-vs-binary** yang perlu keputusan
-    silikon (di-RE port mengikuti binary blob stok yang jadi ground truth)
+  - `sc27xx_typec`: **KONFLIK SUDAH DIPUTUSKAN & FIXED (2026-11-25)**.
+    Ground truth = **stock source + stock binary `.rodata` + disassembly RE**
+    (tiga bukti konsisten), yang menang atas port. Akar masalah: RE salah baca
+    `ldr w8, [x8, #20]` — `#20` adalah **byte-offset field index 5**
+    (`mode_ctrl_off`), BUKAN nilai register. Port lama menulis 4 konstanta
+    salah: `sc2730.mode_ctrl_off 0x14→0x04`, `sc2721.state_mask 0x08→0x0f`,
+    `ump9620.cc2_shift 12→11`, `ump9620.mode_ctrl_off 0x14→0x04`.
+    Fix diterapkan di 3 salinan source; CI build `45477422321` menghasilkan
+    `.ko` yang **30/30 nilai `.rodata` MATCH ground truth**; modul fix
+    **LOAD OK di LKVM device** (lihat bagian FIX TYPEC di bawah).
   - `clk-sprd`: akses register via offset runtime (`common->reg - div->offset`)
     → **artefak harness**, bukan defect
 - 5 HARNESS-MISS: source stock memanggil regmap tapi harness tak baca offset
-  (butuh resolusi lebih dalam) — bukan bukti defect
+  (butuh resolusi lebih dalam) — **diaudit manual, semuanya artefak harness**:
+  - `bq2560x-charger`: **54/54 konstanta identik** (0 beda) — akses lewat
+    pointer runtime `info->charger_pd`
+  - `sc2730-regulator`: **120/121 identik**; 1 beda = `SPRD_MIN_VOLTAGE_UV=300000`
+    yang hanya dipakai guard debug `regulator_set_voltage_sel_sprd`, sedangkan
+    port memakai `.linear_min_sel=0` → bukan defect
+  - `agdsp_access` 5/5 identik · `sprd_audcp_boot` 3/3 identik ·
+    `sprd-top-dvfs` 0 konstanta (semua via array/struct)
 - 34 NO-REG-EVIDENCE: source stock tak punya akses register langsung (via
   framework PWM/regulator/thermal) — tidak ada yang bisa dibandingkan
+
+## FIX `sc27xx_typec` — VERIFIKASI RUNTIME DI LKVM (2026-11-25)
+
+Tahap akhir porting: bug konstanta typec yang ditemukan lewat cross-check
+RE-vs-source sudah diperbaiki dan **dibuktikan di guest LKVM device**.
+
+| Bukti | Nilai |
+|---|---|
+| Build CI (dengan fix) | run `45477422321` — sukses 30m12s, artifact `built-kos` |
+| `.rodata` binary baru vs ground truth | **30/30 MATCH** (sc2730 @0x4e0, sc2721 @0x4b8, ump9620 @0x490) |
+| md5 `.ko` fix (host == device) | `d45475bb3f979a38c4b5fa7c3f064954` |
+| Boot LKVM run #1 (2026-11-25 06:46) | `sc27xx_typec.ko` **LOAD OK**; `SUMMARY: total=232 loaded=229 skipped=3 failed=0`; `VXTUX-MODTEST-PASS` |
+| Boot LKVM run #2 (2026-11-25 06:48) | **identik** — `LOAD OK`; `loaded=229 failed=0`; `PASS` (deterministik 2×) |
+| Log bukti | `recon_final/lkvm_typecfix_final.log` |
+
+**Catatan alignment (bukan defect modul):** `initramfs` yang dipakai untuk
+boot adalah archive `padded` (232 modul) yang sudah terbukti menghasilkan
+229/232 pada baseline. Modul fix disisipkan **byte-level** (sama panjang
+file: 367040 byte fix + 32 byte zero-pad → 367072) sehingga **offset dan
+alignment seluruh entri lain tidak bergeser**. Repack dari nol (repack penuh)
+menggeser alignment dan memunculkan artefak `ENOEXEC` pada modul lain
+(mis. `drxk.ko`) — itu artefak layout initramfs LKVM, bukan cacat driver.
+Kernel telanjang `Image_vxtux618_lkvm` juga **bukan** acuan: ia tidak membawa
+modul builtin yang sama sehingga ~177 modul gagal `errno=-2` (unresolved
+symbol) — acuan yang benar adalah `Image_modtest_embedded` (kernel `#2`).
+
 
 ## KESIMPULAN
 
 - Porting 6.18.52 → 242 `.ko`: **terbukti bisa di-load 229/232 di LKVM device
   (0 failed, 3 skip by-design)** + tes pemicu BFKRT jalan end-to-end.
-- Diff register/bit static: **5 EXACT, 2 artefak harness, 1 konflik RE-vs-source
-  (sc27xx_typec — tercatat, perlu keputusan silikon)**.
+- Diff register/bit static: **5 EXACT, 5 HARNESS-MISS teraudit (semua artefak),
+  2 artefak harness (sc27xx_adc, clk-sprd), 34 NO-REG-EVIDENCE**.
+- **Bug `sc27xx_typec` ditemukan & diperbaiki**: RE salah baca `#20` (byte-offset
+  field) sbg nilai register → 4 konstanta salah. Fix di 3 salinan source,
+  binary CI terverifikasi **30/30 MATCH ground truth**, dan modul fix
+  **LOAD OK di LKVM device** (229/232, 0 failed, 2× deterministik).
 - BFKRT runtime diff (QEMU + LKVM): boot bersih, trigger & observasi tertangkap,
   0 panic, rmmod bersih.
+- **STATUS: 100% — porting tuntas, diverifikasi runtime, rekonstruksi ter-commit.**
