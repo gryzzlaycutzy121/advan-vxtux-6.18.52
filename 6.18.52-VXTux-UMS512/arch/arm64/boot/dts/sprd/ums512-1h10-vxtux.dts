@@ -1796,11 +1796,22 @@ charger@6b {
 	 * the gate node is defined.
 	 * clocks = <&gpu_clk>, <&gpu_core_eb>, <&gpu_mem_eb>, <&gpu_sys_eb>;
 	 * clock-names = "gpu", "core", "mem", "sys"; */
-	clocks = <&gpu_clk 0>;
+	/* Panfrost consumes clocks[0] (devm_clk_get(dev, NULL)) and must be able
+	 * to set its rate for DVFS: use gpu_core_clk (the settable composite,
+	 * index 1) instead of the gate gpu_core_gate (index 0), which cannot be
+	 * rate-set. Matching the vendor OPPs (384/512/614.4/768/850 MHz) is what
+	 * panfrost_devfreq_target() sets through this clock. */
+	clocks = <&gpu_clk 1>;
 	clock-names = "gpu";
 
-	assigned-clocks = <&gpu_clk 0>;
+	assigned-clocks = <&gpu_clk 1>;
 	assigned-clock-rates = <850000000>;
+
+	/* Voltage rail from the SC2730 PMIC (DCDC_GPU, "vddgpu"). Without a
+	 * "mali"-named supply devm_pm_opp_set_regulators() returns -ENODEV and
+	 * Panfrost runs freq-only DVFS; with it the OPP voltages are honoured,
+	 * matching the vendor kbase behaviour. */
+	mali-supply = <&vddgpu>;
 
 	/* The GPU power gate lives in the PMU APB syscon, not in the PMIC: the
 	 * stock DT (/soc/mm/gpu@60000000) says
@@ -1876,15 +1887,15 @@ gpu_opp_table: opp-table {
 	};
 	opp-614400000 {
 		opp-hz = /bits/ 64 <614400000>;
-		opp-microvolt = <800000>;
+		opp-microvolt = <750000>;
 	};
 	opp-768000000 {
 		opp-hz = /bits/ 64 <768000000>;
-		opp-microvolt = <850000>;
+		opp-microvolt = <800000>;
 	};
 	opp-850000000 {
 		opp-hz = /bits/ 64 <850000000>;
-		opp-microvolt = <900000>;
+		opp-microvolt = <800000>;
 	};
 };
 };
