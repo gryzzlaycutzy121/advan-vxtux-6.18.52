@@ -1,0 +1,16 @@
+# ROM extraction workspace — only commit the userspace ports + source docs.
+rom_bins.tgz
+rom_libs.tgz
+extracted/
+decomp/
+pull/
+pull_*
+libs/
+apks/
+work/
+hello_a64
+hello_static
+hello.c
+*.zip
+*.zip
+usr/sbin/unisoc-*
