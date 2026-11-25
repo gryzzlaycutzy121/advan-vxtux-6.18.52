@@ -180,6 +180,8 @@ int main(void) {
                 state[i] = 1; loaded++; progress++;
                 serf("LOAD OK   %s\n", lines[i]);
             } else {
+                if (lasterr[i] == 0)   /* errno pertama kali gagal -- TICK16 */
+                    serf("LOAD FAIL-1st %s (errno=%d)\n", lines[i], e);
                 lasterr[i] = e;
                 if (pass == passes - 1) {
                     state[i] = 3;
@@ -188,6 +190,15 @@ int main(void) {
             }
         }
         if (!progress) break; /* tidak ada lagi yang bisa dimuat */
+    }
+    /* TICK16: modul yang tersisa di state 0 (selalu gagal, loop break lebih
+     * awal dari pass terakhir) sebelumnya HILANG senyap dari FAILED LIST.
+     * Sekarang dipromosikan ke hard-fail agar tidak ada bukti yang hilang. */
+    for (int i = 0; i < total; i++) {
+        if (state[i] == 0 && lasterr[i] != 0) {
+            state[i] = 3;
+            serf("LOAD FAIL(stuck) %s (errno=%d)\n", lines[i], lasterr[i]);
+        }
     }
     serf("=== PHASE-A SUMMARY: total=%d loaded=%d (env candidates ditunda) ===\n",
          total, loaded);
