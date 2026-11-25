@@ -143,6 +143,7 @@ RE-vs-source sudah diperbaiki dan **dibuktikan di guest LKVM device**.
 | Build CI (dengan fix) | run `45477422321` — sukses 30m12s, artifact `built-kos` |
 | `.rodata` binary baru vs ground truth | **30/30 MATCH** (sc2730 @0x4e0, sc2721 @0x4b8, ump9620 @0x490) |
 | md5 `.ko` fix (host == device) | `d45475bb3f979a38c4b5fa7c3f064954` |
+| CI build di branch `test1` (dengan fix) | run **`45514396925`** — sukses; artifact `built-kos` = 232 `.ko`; `.ko` typec md5 `d45475bb` (**identik dgn yang LOAD OK di device**); 3/3 tabel ground truth MATCH |
 | Boot LKVM run #1 (2026-11-25 06:46) | `sc27xx_typec.ko` **LOAD OK**; `SUMMARY: total=232 loaded=229 skipped=3 failed=0`; `VXTUX-MODTEST-PASS` |
 | Boot LKVM run #2 (2026-11-25 06:48) | **identik** — `LOAD OK`; `loaded=229 failed=0`; `PASS` (deterministik 2×) |
 | Log bukti | `recon_final/lkvm_typecfix_final.log` |
