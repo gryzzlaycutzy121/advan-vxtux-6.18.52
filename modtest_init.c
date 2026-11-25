@@ -9,6 +9,18 @@
 //     (untuk dependensi), lalu menulis ringkasan ke serial (/dev/hvc0 atau
 //     /dev/console) dan /dev/kmsg.
 //
+// TICK15 (2026-11-25): modul yang sebelumnya di-SKIP by-nama (ion_ipc_trusty,
+// ims_bridge, ims_bridge_t) sekarang DICOBA dimuat -- tidak lagi dilewati
+// buta. Analisis source port (docs/PORT_RUNTIME_VALIDATION.md):
+//   - ion_ipc_trusty -> ion_tipc_init() -> tipc_create_channel(NULL,...) ->
+//     default_vdev == NULL (belum ada device Trusty virtio) -> ERR_PTR(-ENOENT)
+//     => load gagal DETERMINISTIK errno -2, tidak hang.
+//   - ims_bridge      -> imsbr_init() -> imsbr_sipc_init() hanya schedule_work
+//     (async; retry 120x msleep lalu menyerah) => init return 0, aman.
+//   - ims_bridge_t    -> imsbr_transit_init() -> imsbr_sipc_create() (sblock).
+// Kandidat ENV dicoba DI AKHIR (Phase B) supaya kalau ternyata ada yang hang,
+// bukti Phase A (229 LOAD OK) tetap tercetak di serial log.
+//
 // Exit: RB_POWER_OFF setelah selesai (untuk QEMU exit-code gate).
 #define _GNU_SOURCE
 #include <errno.h>
@@ -62,10 +74,11 @@ static int is_already(const char *name) {
     return stat(p, &st) == 0;
 }
 
-/* Modul yang tidak bisa divalidasi di QEMU virt (tidak ada hardware/secure
- * world-nya). finit_module-nya akan mengeksekusi smc atau menyentuh perangkat
- * yang tak ada, menggantung/menabrak CPU. Sengaja dilewati (SKIP), bukan
- * dihitung gagal.
+/* Kandidat "environment-only": module whose probe/IO path needs hardware that
+ * is absent in QEMU virt / LKVM. Dulu dilewati tanpa dicoba (SKIP by-nama).
+ * TICK15: sekarang tetap DICoba; hanya bila errno menunjukkan ketiadaan
+ * device (ENOENT/ENODEV/ENXIO) dan file .ko-nya memang ada, hasilnya
+ * dicatat sebagai ENV-SKIP (attempted) -- bukan gap porting.
  *
  * TICK13: modul EL3/SiP (sprd_sip_svc, sprd-cpufreq-v2, sprd_debugstat,
  * sprd_pdbg) dan trusty-pm TIDAK lagi di-skip: QEMU kini boot lewat TF-A BL31
@@ -77,12 +90,12 @@ static int is_already(const char *name) {
  * (of_match "sprd,mtty" / "sprd,marlin3_fm") yang tak match DT QEMU virt,
  * sehingga probe tidak jalan dan init hanya mendaftarkan driver -- aman
  * walau tanpa chip WCN nyata. */
-static const char *qemu_unsupported(const char *base) {
+static const char *env_candidate(const char *base) {
     /* butuh secure world Trusty (TIPC endpoint) -- tak ada di QEMU */
     static const char *trusty[] = {
         "ion_ipc_trusty",
     };
-    /* butuh modem/CP via SIPC (jadwal kerja async menabrak tanpa CP) */
+    /* butuh modem/CP via SIPC (jadwal kerja async; probe CP bisa error) */
     static const char *modem[] = {
         "ims_bridge", "ims_bridge_t",
     };
@@ -91,6 +104,11 @@ static const char *qemu_unsupported(const char *base) {
     for (unsigned i = 0; i < sizeof modem / sizeof modem[0]; i++)
         if (strcmp(base, modem[i]) == 0) return "butuh modem/CP via SIPC";
     return NULL;
+}
+
+/* errno yang menandakan "device/environment tidak ada", BUKAN defect modul */
+static int is_env_errno(int e) {
+    return e == -ENOENT || e == -ENODEV || e == -ENXIO;
 }
 
 int main(void) {
@@ -123,26 +141,36 @@ int main(void) {
     int loaded = 0, failed = 0, skipped = 0;
     int total = n;
     int passes = 12;
-    int *state = calloc(total, sizeof(int)); /* 0=pending,1=ok,2=skip */
+    /* 0=pending, 1=loaded, 2=env-skip(attempted), 3=hard-fail */
+    int *state = calloc(total, sizeof(int));
     int *lasterr = calloc(total, sizeof(int));
+    const char **envwhy = calloc(total, sizeof(char *));
+    int *isenv = calloc(total, sizeof(int));
     int progress = 1;
 
+    /* pisahkan kandidat ENV (dicoba di Phase B) dari modul biasa */
+    for (int i = 0; i < total; i++) {
+        char name[300]; strcpy(name, lines[i]);
+        char *base = strrchr(name, '/');
+        char *dot = strrchr(base ? base : name, '.');
+        if (dot) *dot = 0;
+        char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
+        const char *why = env_candidate(b2);
+        if (why) { isenv[i] = 1; envwhy[i] = why; }
+    }
+
+    /* ---------------- Phase A: modul biasa (retry multi-pass) -------------- */
     for (int pass = 0; pass < passes && progress; pass++) {
         progress = 0;
         for (int i = 0; i < total; i++) {
             if (state[i]) continue;
+            if (isenv[i]) continue;          /* defer ke Phase B */
             /* already loaded (built-in or earlier module)? */
             char name[300]; strcpy(name, lines[i]);
             char *base = strrchr(name, '/');
             char *dot = strrchr(base ? base : name, '.');
             if (dot) *dot = 0;
             char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
-            const char *why = qemu_unsupported(b2);
-            if (why) {
-                state[i] = 2; skipped++; progress++;
-                serf("SKIP (%s) %s\n", why, lines[i]);
-                continue;
-            }
             if (is_already(b2)) { state[i] = 1; loaded++; progress++; continue; }
 
             char path[384];
@@ -153,11 +181,53 @@ int main(void) {
                 serf("LOAD OK   %s\n", lines[i]);
             } else {
                 lasterr[i] = e;
-                if (pass == passes - 1)
+                if (pass == passes - 1) {
+                    state[i] = 3;
                     serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
+                }
             }
         }
         if (!progress) break; /* tidak ada lagi yang bisa dimuat */
+    }
+    serf("=== PHASE-A SUMMARY: total=%d loaded=%d (env candidates ditunda) ===\n",
+         total, loaded);
+
+    /* ---------------- Phase B: kandidat ENV, dicoba satu kali --------------- */
+    for (int i = 0; i < total; i++) {
+        if (!isenv[i]) continue;
+        char name[300]; strcpy(name, lines[i]);
+        char *base = strrchr(name, '/');
+        char *dot = strrchr(base ? base : name, '.');
+        if (dot) *dot = 0;
+        char *b2 = strrchr(name, '/'); b2 = b2 ? b2 + 1 : name;
+
+        serf("ENV-CANDIDATE try %s (env=%s)\n", lines[i], envwhy[i]);
+        if (is_already(b2)) {
+            state[i] = 1; loaded++;
+            serf("LOAD OK   %s (sudah termuat/builtin)\n", lines[i]);
+            continue;
+        }
+        char path[384];
+        snprintf(path, sizeof path, "/modules/%s", lines[i]);
+        if (access(path, F_OK) != 0) {
+            state[i] = 3; lasterr[i] = -errno;
+            serf("LOAD FAIL %s (file hilang, errno=%d)\n", lines[i], -errno);
+            continue;
+        }
+        int e = load_one(path);
+        if (e == 0) {
+            state[i] = 1; loaded++;
+            serf("LOAD OK   %s\n", lines[i]);
+        } else {
+            lasterr[i] = e;
+            if (is_env_errno(e)) {
+                state[i] = 2; skipped++;
+                serf("ENV-SKIP (attempted, errno=%d: %s) %s\n", e, envwhy[i], lines[i]);
+            } else {
+                state[i] = 3;
+                serf("LOAD FAIL %s (errno=%d)\n", lines[i], e);
+            }
+        }
     }
 
     failed = 0; skipped = 0;
@@ -169,7 +239,7 @@ int main(void) {
     if (failed) {
         ser("=== FAILED LIST ===\n");
         for (int i = 0; i < total; i++)
-            if (state[i] == 0)
+            if (state[i] == 3)
                 serf("FAILED %s (errno=%d)\n", lines[i], lasterr[i]);
     }
     serf("=== SUMMARY: total=%d loaded=%d skipped=%d failed=%d ===\n",
