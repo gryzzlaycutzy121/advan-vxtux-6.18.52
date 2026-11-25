@@ -577,6 +577,29 @@ static struct genl_family imsbr_genl_family = {
 	.ops		= imsbr_genl_ops,
 	.n_ops		= ARRAY_SIZE(imsbr_genl_ops),
 	.policy		= imsbr_genl_policy,
+	/*
+	 * TICK15: WAJIB diisi. Kernel 6.18 (net/netlink/genetlink.c
+	 * genl_validate_ops) menolak keluarga yang resv_start_op == 0
+	 * (= "cmd baru") whilst op-nya memakai .validate =
+	 * GENL_DONT_VALIDATE_STRICT:
+	 *   WARN_ON(i.cmd >= family->resv_start_op &&
+	 *           (i.doit.validate || i.dumpit.validate))
+	 * -> return -EINVAL -> genl_register_family gagal -> insmod errno -22
+	 * (ternyata tersembunyi selama loader SKIP-by-nama modul ini).
+	 *
+	 * Driver iniported dari blob 5.4: seluruh cmd-nya (IMSBR_C_CALL_STATE ..
+	 * IMSBR_C_DEL_SPI = 1..9) memang cmd "lama" yang tidak mewajibkan
+	 * policy per-op dan tidak divalidasi ketat. Set resv_start_op =
+	 * __IMSBR_C_MAX (10) -> semua cmd masuk rentang legacy:
+	 *   - warning genl_validate_ops hilang,
+	 *   - genl_op_fill_in_reject_policy() tidak memasang policy reject_all
+	 *     (jadi atribut family-level tetap dipakai),
+	 *   - genl_header_check() tidak mensyaratkan hdr->reserved == 0,
+	 * sesuai semantik kernel 5.4 asal.
+	 * Pola sama dipakai kernel sendiri: thermal_netlink.c
+	 * (.resv_start_op = __THERMAL_GENL_CMD_MAX), team_core.c, nbd.c, dll.
+	 */
+	.resv_start_op	= __IMSBR_C_MAX,
 };
 
 int __init imsbr_netlink_init(void)
