@@ -1,0 +1,1273 @@
+[launcher] HOME=/data/local/tmp ulimit-l=unlimited uid=0
+[launcher] starting lkvm: Wed Nov 25 06:48:45 WIB 2026
+  Info: # lkvm run -k /data/local/tmp/kvm/Image_modtest_embedded -m 4096 -c 4 --name vxtux-typecfix2
+[    0.000000][    T0] Booting Linux on physical CPU 0x0000000000 [0x413fd0a1]
+[    0.000000][    T0] Linux version 6.18.52-VXTux-UMS512-artix (runner@runnervmxfy6o) (aarch64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #2 SMP PREEMPT Tue Nov 24 13:54:48 UTC 2026
+[    0.000000][    T0] KASLR disabled due to lack of seed
+[    0.000000][    T0] Machine model: linux,dummy-virt
+[    0.000000][    T0] efi: UEFI not found.
+[    0.000000][    T0] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[    0.000000][    T0] Zone ranges:
+[    0.000000][    T0]   DMA      [mem 0x0000000080000000-0x00000000ffffffff]
+[    0.000000][    T0]   DMA32    empty
+[    0.000000][    T0]   Normal   [mem 0x0000000100000000-0x000000017fffffff]
+[    0.000000][    T0] Movable zone start for each node
+[    0.000000][    T0] Early memory node ranges
+[    0.000000][    T0]   node   0: [mem 0x0000000080000000-0x000000017fffffff]
+[    0.000000][    T0] Initmem setup node 0 [mem 0x0000000080000000-0x000000017fffffff]
+[    0.000000][    T0] cma: Reserved 32 MiB at 0x00000000fe000000
+[    0.000000][    T0] psci: probing for conduit method from DT.
+[    0.000000][    T0] psci: PSCIv1.0 detected in firmware.
+[    0.000000][    T0] psci: Using standard PSCI v0.2 function IDs
+[    0.000000][    T0] psci: Trusted OS migration not required
+[    0.000000][    T0] psci: SMC Calling Convention v1.1
+[    0.000000][    T0] percpu: Embedded 50 pages/cpu s164432 r8192 d32176 u204800
+[    0.000000][    T0] Detected VIPT I-cache on CPU0
+[    0.000000][    T0] CPU features: detected: GICv3 CPU interface
+[    0.000000][    T0] CPU features: detected: Spectre-v4
+[    0.000000][    T0] CPU features: detected: Spectre-BHB
+[    0.000000][    T0] CPU features: detected: Kernel page table isolation (KPTI)
+[    0.000000][    T0] alternatives: applying boot alternatives
+[    0.000000][    T0] Kernel command line:  console=ttyS0 root=/dev/vda rw  console=ttyAMA0 rdinit=/init panic=1 loglevel=7
+[    0.000000][    T0] printk: log buffer data + meta data: 2097152 + 7340032 = 9437184 bytes
+[    0.000000][    T0] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000][    T0] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000][    T0] software IO TLB: area num 4.
+[    0.000000][    T0] software IO TLB: mapped [mem 0x00000000fa000000-0x00000000fe000000] (64MB)
+[    0.000000][    T0] Built 1 zonelists, mobility grouping on.  Total pages: 1048576
+[    0.000000][    T0] mem auto-init: stack:off, heap alloc:on, heap free:off
+[    0.000000][    T0] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000][    T0] 
+[    0.000000][    T0] **********************************************************
+[    0.000000][    T0] **   NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE   **
+[    0.000000][    T0] **                                                      **
+[    0.000000][    T0] ** trace_printk() being used. Allocating extra memory.  **
+[    0.000000][    T0] **                                                      **
+[    0.000000][    T0] ** This means that this is a DEBUG kernel and it is     **
+[    0.000000][    T0] ** unsafe for production use.                           **
+[    0.000000][    T0] **                                                      **
+[    0.000000][    T0] ** If you see this message and you are not debugging    **
+[    0.000000][    T0] ** the kernel, report this immediately to your vendor!  **
+[    0.000000][    T0] **                                                      **
+[    0.000000][    T0] **   NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE   **
+[    0.000000][    T0] **********************************************************
+[    0.000000][    T0] Running RCU self tests
+[    0.000000][    T0] Running RCU synchronous self tests
+[    0.000000][    T0] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000][    T0] rcu: 	RCU event tracing is enabled.
+[    0.000000][    T0] rcu: 	RCU lockdep checking is enabled.
+[    0.000000][    T0] rcu: 	RCU restricting CPUs from NR_CPUS=512 to nr_cpu_ids=4.
+[    0.000000][    T0] rcu: 	RCU callback double-/use-after-free debug is enabled.
+[    0.000000][    T0] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000][    T0] 	Tracing variant of Tasks RCU enabled.
+[    0.000000][    T0] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000][    T0] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+[    0.000000][    T0] Running RCU synchronous self tests
+[    0.000000][    T0] RCU Tasks: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.000000][    T0] RCU Tasks Trace: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.000000][    T0] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000][    T0] GICv3: 32 SPIs implemented
+[    0.000000][    T0] GICv3: 0 Extended SPIs implemented
+[    0.000000][    T0] Root IRQ handler: gic_handle_irq
+[    0.000000][    T0] GICv3: GICv3 features: 16 PPIs
+[    0.000000][    T0] GICv3: GICD_CTLR.DS=1, SCR_EL3.FIQ=0
+[    0.000000][    T0] GICv3: CPU0: found redistributor 0 region 0:0x000000003ff70000
+[    0.000000][    T0] ITS [mem 0x3ff50000-0x3ff6ffff]
+[    0.000000][    T0] ITS@0x000000003ff50000: allocated 8192 Devices @100280000 (indirect, esz 8, psz 64K, shr 1)
+[    0.000000][    T0] ITS@0x000000003ff50000: allocated 8192 Interrupt Collections @100290000 (flat, esz 8, psz 64K, shr 1)
+[    0.000000][    T0] GICv3: using LPI property table @0x00000001002a0000
+[    0.000000][    T0] GICv3: CPU0: using allocated LPI pending table @0x00000001002b0000
+[    0.000000][    T0] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000][    T0] arch_timer: cp15 timer running at 26.00MHz (virt).
+[    0.000000][    T0] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x5ff13d5a9, max_idle_ns: 440795202370 ns
+[    0.000000][    T0] sched_clock: 56 bits at 26MHz, resolution 38ns, wraps every 4398046511088ns
+[    0.000230][    T0] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.001102][    T0] Console: colour dummy device 80x25
+[    0.001188][    T0] serial port 0 not yet initialized
+[    0.001194][    T0] Lock dependency validator: Copyright (c) 2006 Red Hat, Inc., Ingo Molnar
+[    0.001199][    T0] ... MAX_LOCKDEP_SUBCLASSES:  8
+[    0.001201][    T0] ... MAX_LOCK_DEPTH:          48
+[    0.001203][    T0] ... MAX_LOCKDEP_KEYS:        8192
+[    0.001206][    T0] ... CLASSHASH_SIZE:          4096
+[    0.001207][    T0] ... MAX_LOCKDEP_ENTRIES:     32768
+[    0.001209][    T0] ... MAX_LOCKDEP_CHAINS:      65536
+[    0.001210][    T0] ... CHAINHASH_SIZE:          32768
+[    0.001212][    T0]  memory used by lock dependency info: 6429 kB
+[    0.001214][    T0]  memory used for stack traces: 4224 kB
+[    0.001216][    T0]  per task-struct memory footprint: 1920 bytes
+[    0.001221][    T0] ------------------------
+[    0.001225][    T0] | Locking API testsuite:
+[    0.001229][    T0] ----------------------------------------------------------------------------
+[    0.001231][    T0]                                  | spin |wlock |rlock |mutex | wsem | rsem |rtmutex
+[    0.001233][    T0]   --------------------------------------------------------------------------
+[    0.001243][    T0]                      A-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.005929][    T0]                  A-B-B-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.010674][    T0]              A-B-B-C-C-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.015694][    T0]              A-B-C-A-B-C deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.020729][    T0]          A-B-B-C-C-D-D-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.026077][    T0]          A-B-C-D-B-D-D-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.031433][    T0]          A-B-C-D-B-C-D-A deadlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.036793][    T0]                     double unlock:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.041132][    T0]                   initialize held:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.045364][    T0]   --------------------------------------------------------------------------
+[    0.045367][    T0]               recursive read-lock:             |  ok  |             |  ok  |
+[    0.046650][    T0]            recursive read-lock #2:             |  ok  |             |  ok  |
+[    0.047888][    T0]             mixed read-write-lock:             |  ok  |             |  ok  |
+[    0.049166][    T0]             mixed write-read-lock:             |  ok  |             |  ok  |
+[    0.050407][    T0]   mixed read-lock/lock-write ABBA:             |  ok  |             |  ok  |
+[    0.051738][    T0]    mixed read-lock/lock-read ABBA:             |  ok  |             |  ok  |
+[    0.053084][    T0]  mixed write-lock/lock-write ABBA:             |  ok  |             |  ok  |
+[    0.054439][    T0]   chain cached mixed R-L/L-W ABBA:             |  ok  |
+[    0.055108][    T0]          rlock W1R2/W2R3/W3R1/123:             |  ok  |
+[    0.055824][    T0]          rlock W1R2/W2R3/W3R1/132:             |  ok  |
+[    0.056568][    T0]          rlock W1R2/W2R3/W3R1/213:             |  ok  |
+[    0.057285][    T0]          rlock W1R2/W2R3/W3R1/231:             |  ok  |
+[    0.058022][    T0]          rlock W1R2/W2R3/W3R1/312:             |  ok  |
+[    0.058740][    T0]          rlock W1R2/W2R3/W3R1/321:             |  ok  |
+[    0.059459][    T0]          rlock W1W2/R2R3/W3R1/123:             |  ok  |
+[    0.060178][    T0]          rlock W1W2/R2R3/W3R1/132:             |  ok  |
+[    0.060915][    T0]          rlock W1W2/R2R3/W3R1/213:             |  ok  |
+[    0.061634][    T0]          rlock W1W2/R2R3/W3R1/231:             |  ok  |
+[    0.062371][    T0]          rlock W1W2/R2R3/W3R1/312:             |  ok  |
+[    0.063092][    T0]          rlock W1W2/R2R3/W3R1/321:             |  ok  |
+[    0.063807][    T0]          rlock W1W2/R2R3/R3W1/123:             |  ok  |
+[    0.064539][    T0]          rlock W1W2/R2R3/R3W1/132:             |  ok  |
+[    0.065259][    T0]          rlock W1W2/R2R3/R3W1/213:             |  ok  |
+[    0.065973][    T0]          rlock W1W2/R2R3/R3W1/231:             |  ok  |
+[    0.066706][    T0]          rlock W1W2/R2R3/R3W1/312:             |  ok  |
+[    0.067422][    T0]          rlock W1W2/R2R3/R3W1/321:             |  ok  |
+[    0.068135][    T0]          rlock W1R2/R2R3/W3W1/123:             |  ok  |
+[    0.068866][    T0]          rlock W1R2/R2R3/W3W1/132:             |  ok  |
+[    0.069583][    T0]          rlock W1R2/R2R3/W3W1/213:             |  ok  |
+[    0.070298][    T0]          rlock W1R2/R2R3/W3W1/231:             |  ok  |
+[    0.071034][    T0]          rlock W1R2/R2R3/W3W1/312:             |  ok  |
+[    0.071750][    T0]          rlock W1R2/R2R3/W3W1/321:             |  ok  |
+[    0.072463][    T0]   --------------------------------------------------------------------------
+[    0.072467][    T0]      hard-irqs-on + irq-safe-A/12:  ok  |  ok  |  ok  |
+[    0.074349][    T0]      soft-irqs-on + irq-safe-A/12:  ok  |  ok  |  ok  |
+[    0.076235][    T0]      hard-irqs-on + irq-safe-A/21:  ok  |  ok  |  ok  |
+[    0.078115][    T0]      soft-irqs-on + irq-safe-A/21:  ok  |  ok  |  ok  |
+[    0.080000][    T0]        sirq-safe-A => hirqs-on/12:  ok  |  ok  |  ok  |
+[    0.081872][    T0]        sirq-safe-A => hirqs-on/21:  ok  |  ok  |  ok  |
+[    0.083735][    T0]          hard-safe-A + irqs-on/12:  ok  |  ok  |  ok  |
+[    0.085636][    T0]          soft-safe-A + irqs-on/12:  ok  |  ok  |  ok  |
+[    0.087494][    T0]          hard-safe-A + irqs-on/21:  ok  |  ok  |  ok  |
+[    0.089392][    T0]          soft-safe-A + irqs-on/21:  ok  |  ok  |  ok  |
+[    0.091250][    T0]     hard-safe-A + unsafe-B #1/123:  ok  |  ok  |  ok  |
+[    0.093281][    T0]     soft-safe-A + unsafe-B #1/123:  ok  |  ok  |  ok  |
+[    0.095278][    T0]     hard-safe-A + unsafe-B #1/132:  ok  |  ok  |  ok  |
+[    0.097300][    T0]     soft-safe-A + unsafe-B #1/132:  ok  |  ok  |  ok  |
+[    0.099303][    T0]     hard-safe-A + unsafe-B #1/213:  ok  |  ok  |  ok  |
+[    0.101331][    T0]     soft-safe-A + unsafe-B #1/213:  ok  |  ok  |  ok  |
+[    0.103325][    T0]     hard-safe-A + unsafe-B #1/231:  ok  |  ok  |  ok  |
+[    0.105353][    T0]     soft-safe-A + unsafe-B #1/231:  ok  |  ok  |  ok  |
+[    0.107344][    T0]     hard-safe-A + unsafe-B #1/312:  ok  |  ok  |  ok  |
+[    0.109261][    T0]     soft-safe-A + unsafe-B #1/312:  ok  |  ok  |  ok  |
+[    0.111194][    T0]     hard-safe-A + unsafe-B #1/321:  ok  |  ok  |  ok  |
+[    0.113199][    T0]     soft-safe-A + unsafe-B #1/321:  ok  |  ok  |  ok  |
+[    0.115218][    T0]     hard-safe-A + unsafe-B #2/123:  ok  |  ok  |  ok  |
+[    0.117236][    T0]     soft-safe-A + unsafe-B #2/123:  ok  |  ok  |  ok  |
+[    0.119275][    T0]     hard-safe-A + unsafe-B #2/132:  ok  |  ok  |  ok  |
+[    0.121292][    T0]     soft-safe-A + unsafe-B #2/132:  ok  |  ok  |  ok  |
+[    0.123307][    T0]     hard-safe-A + unsafe-B #2/213:  ok  |  ok  |  ok  |
+[    0.125320][    T0]     soft-safe-A + unsafe-B #2/213:  ok  |  ok  |  ok  |
+[    0.127339][    T0]     hard-safe-A + unsafe-B #2/231:  ok  |  ok  |  ok  |
+[    0.129355][    T0]     soft-safe-A + unsafe-B #2/231:  ok  |  ok  |  ok  |
+[    0.131379][    T0]     hard-safe-A + unsafe-B #2/312:  ok  |  ok  |  ok  |
+[    0.133404][    T0]     soft-safe-A + unsafe-B #2/312:  ok  |  ok  |  ok  |
+[    0.135427][    T0]     hard-safe-A + unsafe-B #2/321:  ok  |  ok  |  ok  |
+[    0.137444][    T0]     soft-safe-A + unsafe-B #2/321:  ok  |  ok  |  ok  |
+[    0.139480][    T0]       hard-irq lock-inversion/123:  ok  |  ok  |  ok  |
+[    0.141497][    T0]       soft-irq lock-inversion/123:  ok  |  ok  |  ok  |
+[    0.143521][    T0]       hard-irq lock-inversion/132:  ok  |  ok  |  ok  |
+[    0.145544][    T0]       soft-irq lock-inversion/132:  ok  |  ok  |  ok  |
+[    0.147572][    T0]       hard-irq lock-inversion/213:  ok  |  ok  |  ok  |
+[    0.149582][    T0]       soft-irq lock-inversion/213:  ok  |  ok  |  ok  |
+[    0.151595][    T0]       hard-irq lock-inversion/231:  ok  |  ok  |  ok  |
+[    0.153619][    T0]       soft-irq lock-inversion/231:  ok  |  ok  |  ok  |
+[    0.155639][    T0]       hard-irq lock-inversion/312:  ok  |  ok  |  ok  |
+[    0.157657][    T0]       soft-irq lock-inversion/312:  ok  |  ok  |  ok  |
+[    0.159694][    T0]       hard-irq lock-inversion/321:  ok  |  ok  |  ok  |
+[    0.161706][    T0]       soft-irq lock-inversion/321:  ok  |  ok  |  ok  |
+[    0.163725][    T0]       hard-irq read-recursion/123:      |  ok  |  ok  |
+[    0.165034][    T0]       soft-irq read-recursion/123:      |  ok  |  ok  |
+[    0.166329][    T0]       hard-irq read-recursion/132:      |  ok  |  ok  |
+[    0.167677][    T0]       soft-irq read-recursion/132:      |  ok  |  ok  |
+[    0.169030][    T0]       hard-irq read-recursion/213:      |  ok  |  ok  |
+[    0.170322][    T0]       soft-irq read-recursion/213:      |  ok  |  ok  |
+[    0.171609][    T0]       hard-irq read-recursion/231:      |  ok  |  ok  |
+[    0.172949][    T0]       soft-irq read-recursion/231:      |  ok  |  ok  |
+[    0.174242][    T0]       hard-irq read-recursion/312:      |  ok  |  ok  |
+[    0.175573][    T0]       soft-irq read-recursion/312:      |  ok  |  ok  |
+[    0.176964][    T0]       hard-irq read-recursion/321:      |  ok  |  ok  |
+[    0.178297][    T0]       soft-irq read-recursion/321:      |  ok  |  ok  |
+[    0.179630][    T0]    hard-irq read-recursion #2/123:      |  ok  |  ok  |
+[    0.180996][    T0]    soft-irq read-recursion #2/123:      |  ok  |  ok  |
+[    0.182332][    T0]    hard-irq read-recursion #2/132:      |  ok  |  ok  |
+[    0.183657][    T0]    soft-irq read-recursion #2/132:      |  ok  |  ok  |
+[    0.185024][    T0]    hard-irq read-recursion #2/213:      |  ok  |  ok  |
+[    0.186367][    T0]    soft-irq read-recursion #2/213:      |  ok  |  ok  |
+[    0.187710][    T0]    hard-irq read-recursion #2/231:      |  ok  |  ok  |
+[    0.189077][    T0]    soft-irq read-recursion #2/231:      |  ok  |  ok  |
+[    0.190412][    T0]    hard-irq read-recursion #2/312:      |  ok  |  ok  |
+[    0.191741][    T0]    soft-irq read-recursion #2/312:      |  ok  |  ok  |
+[    0.193104][    T0]    hard-irq read-recursion #2/321:      |  ok  |  ok  |
+[    0.194434][    T0]    soft-irq read-recursion #2/321:      |  ok  |  ok  |
+[    0.195784][    T0]    hard-irq read-recursion #3/123:      |  ok  |  ok  |
+[    0.197163][    T0]    soft-irq read-recursion #3/123:      |  ok  |  ok  |
+[    0.198496][    T0]    hard-irq read-recursion #3/132:      |  ok  |  ok  |
+[    0.199826][    T0]    soft-irq read-recursion #3/132:      |  ok  |  ok  |
+[    0.201203][    T0]    hard-irq read-recursion #3/213:      |  ok  |  ok  |
+[    0.202539][    T0]    soft-irq read-recursion #3/213:      |  ok  |  ok  |
+[    0.203872][    T0]    hard-irq read-recursion #3/231:      |  ok  |  ok  |
+[    0.205239][    T0]    soft-irq read-recursion #3/231:      |  ok  |  ok  |
+[    0.206572][    T0]    hard-irq read-recursion #3/312:      |  ok  |  ok  |
+[    0.207900][    T0]    soft-irq read-recursion #3/312:      |  ok  |  ok  |
+[    0.209274][    T0]    hard-irq read-recursion #3/321:      |  ok  |  ok  |
+[    0.210606][    T0]    soft-irq read-recursion #3/321:      |  ok  |  ok  |
+[    0.211947][    T0]   --------------------------------------------------------------------------
+[    0.211950][    T0]   | Wound/wait tests |
+[    0.211952][    T0]   ---------------------
+[    0.211953][    T0]                   ww api failures:  ok  |  ok  |  ok  |
+[    0.214064][    T0]                ww contexts mixing:  ok  |  ok  |
+[    0.215399][    T0]              finishing ww context:  ok  |  ok  |  ok  |  ok  |
+[    0.218114][    T0]                locking mismatches:  ok  |  ok  |  ok  |
+[    0.220060][    T0]                  EDEADLK handling:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.226834][    T0]            spinlock nest unlocked:  ok  |
+[    0.227452][    T0]                spinlock nest test:  ok  |
+[    0.228168][    T0]   -----------------------------------------------------
+[    0.228171][    T0]                                  |block | try  |context|
+[    0.228173][    T0]   -----------------------------------------------------
+[    0.228175][    T0]                           context:  ok  |  ok  |  ok  |
+[    0.230217][    T0]                               try:  ok  |  ok  |  ok  |
+[    0.232122][    T0]                             block:  ok  |  ok  |  ok  |
+[    0.234075][    T0]                          spinlock:  ok  |  ok  |  ok  |
+[    0.236125][    T0]   --------------------------------------------------------------------------
+[    0.236128][    T0]   | queued read lock tests |
+[    0.236129][    T0]   ---------------------------
+[    0.236131][    T0]       hardirq read-lock/lock-read:  ok  |
+[    0.236816][    T0]       hardirq lock-read/read-lock:  ok  |
+[    0.237510][    T0]                 hardirq inversion:  ok  |
+[    0.238176][    T0]   --------------------
+[    0.238178][    T0]   | fs_reclaim tests |
+[    0.238180][    T0]   --------------------
+[    0.238182][    T0]                   correct nesting:  ok  |
+[    0.238766][    T0]                     wrong nesting:  ok  |
+[    0.239340][    T0]                 protected nesting:  ok  |
+[    0.239915][    T0]   --------------------------------------------------------------------------
+[    0.239918][    T0]   | wait context tests |
+[    0.239920][    T0]   --------------------------------------------------------------------------
+[    0.239922][    T0]                                  | rcu  | raw  | spin |mutex |
+[    0.239924][    T0]   --------------------------------------------------------------------------
+[    0.239926][    T0]                in hardirq context:  ok  |  ok  |  ok  |  ok  |
+[    0.242402][    T0] in hardirq context (not threaded):  ok  |  ok  |  ok  |  ok  |
+[    0.244848][    T0]                in softirq context:  ok  |  ok  |  ok  |  ok  |
+[    0.247307][    T0]                    in RCU context:  ok  |  ok  |  ok  |  ok  |
+[    0.249763][    T0]                 in RCU-bh context:  ok  |  ok  |  ok  |  ok  |
+[    0.252215][    T0]              in RCU-sched context:  ok  |  ok  |  ok  |  ok  |
+[    0.254686][    T0]           in RAW_SPINLOCK context:  ok  |  ok  |  ok  |  ok  |
+[    0.257318][    T0]               in SPINLOCK context:  ok  |  ok  |  ok  |  ok  |
+[    0.259951][    T0]                  in MUTEX context:  ok  |  ok  |  ok  |  ok  |
+[    0.262589][    T0]   --------------------------------------------------------------------------
+[    0.262591][    T0]   | local_lock tests |
+[    0.262593][    T0]   ---------------------
+[    0.262602][    T0]           local_lock inversion  2:  ok  |
+[    0.263275][    T0]           local_lock inversion 3A:  ok  |
+[    0.264016][    T0]           local_lock inversion 3B:  ok  |
+[    0.264756][    T0]       hardirq_unsafe_softirq_safe:  ok  |
+[    0.265572][    T0]   --------------------------------------------------------------------------
+[    0.265575][    T0]   | lockdep_set_subclass() name test|
+[    0.265577][    T0]   -----------------------------------
+[    0.265579][    T0]     compare name before and after:  ok  |
+[    0.266198][    T0] -------------------------------------------------------
+[    0.266207][    T0] Good, all 395 testcases passed! |
+[    0.266211][    T0] ---------------------------------
+[    0.266293][    T0] Calibrating delay loop (skipped), value calculated using timer frequency.. 52.00 BogoMIPS (lpj=104000)
+[    0.266302][    T0] pid_max: default: 32768 minimum: 301
+[    0.270900][    T0] LSM: initializing lsm=capability,selinux
+[    0.275173][    T0] SELinux:  Initializing.
+[    0.285250][    T0] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.285329][    T0] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.295961][    T0] Running RCU synchronous self tests
+[    0.295978][    T0] Running RCU synchronous self tests
+[    0.297243][    T1] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    0.312579][    T1] vxtux-it: panel tracer on: 8x16 font, 125 rows, 150 cols
+[    0.313961][    T1] rcu: Hierarchical SRCU implementation.
+[    0.313967][    T1] rcu: 	Max phase no-delay instances is 1000.
+[    0.314756][    T1] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.317260][    T1] EFI services will not be available.
+[    0.318376][    T1] smp: Bringing up secondary CPUs ...
+[    0.346681][    T0] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[    0.346758][    T0] Detected VIPT I-cache on CPU1
+[    0.346859][    T0] GICv3: CPU1: found redistributor 1 region 0:0x000000003ff90000
+[    0.347011][    T0] GICv3: CPU1: using allocated LPI pending table @0x00000001002c0000
+[    0.347197][    T0] CPU1: Booted secondary processor 0x0000000001 [0x411fd050]
+[    0.377226][    T0] Detected VIPT I-cache on CPU2
+[    0.377326][    T0] GICv3: CPU2: found redistributor 2 region 0:0x000000003ffb0000
+[    0.377453][    T0] GICv3: CPU2: using allocated LPI pending table @0x00000001002d0000
+[    0.377593][    T0] CPU2: Booted secondary processor 0x0000000002 [0x413fd0a1]
+[    0.406976][    T0] Detected VIPT I-cache on CPU3
+[    0.407106][    T0] GICv3: CPU3: found redistributor 3 region 0:0x000000003ffd0000
+[    0.407230][    T0] GICv3: CPU3: using allocated LPI pending table @0x00000001002e0000
+[    0.407380][    T0] CPU3: Booted secondary processor 0x0000000003 [0x411fd050]
+[    0.409182][    T1] smp: Brought up 1 node, 4 CPUs
+[    0.409193][    T1] SMP: Total of 4 processors activated.
+[    0.409197][    T1] CPU: All CPU(s) started at EL1
+[    0.409202][    T1] CPU features: detected: 32-bit EL0 Support
+[    0.409206][    T1] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.409210][    T1] CPU features: detected: Common not Private translations
+[    0.409213][    T1] CPU features: detected: CRC32 instructions
+[    0.409221][    T1] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.409224][    T1] CPU features: detected: LSE atomic instructions
+[    0.409227][    T1] CPU features: detected: Privileged Access Never
+[    0.409230][    T1] CPU features: detected: PMUv3
+[    0.409233][    T1] CPU features: detected: RAS Extension Support
+[    0.410462][    T1] alternatives: applying system-wide alternatives
+[    0.423521][    T1] CPU features: detected: Hardware dirty bit management on CPU0,2
+[    0.428969][    T1] Memory: 3836352K/4194304K available (20992K kernel code, 9778K rwdata, 12672K rodata, 46208K init, 31167K bss, 311568K reserved, 32768K cma-reserved)
+[    0.434525][    T1] devtmpfs: initialized
+[    0.453523][    T1] Running RCU synchronous self tests
+[    0.453583][    T1] Running RCU synchronous self tests
+[    0.455764][    T1] Running RCU Tasks wait API self tests
+[    0.457284][    T1] Running RCU Tasks Trace wait API self tests
+[    0.478053][    T1] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.478692][    T1] posixtimers hash table entries: 2048 (order: 6, 147456 bytes, linear)
+[    0.478995][    T1] futex hash table entries: 1024 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+[    0.491348][    T1] 2512 pages in range for non-PLT usage
+[    0.491356][    T1] 494032 pages in range for PLT usage
+[    0.492960][    T1] pinctrl core: initialized pinctrl subsystem
+[    0.496002][    T1] DMI not present or invalid.
+[    0.497036][    T1] printk: legacy console [bldb-1] enabled
+[    0.500348][    T1] bldb: BLDB siap -- ring 16 MiB di /dev/bldb0 (Berry Lab Foundation)
+[    0.505987][    T1] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.506025][   T39] Callback from call_rcu_tasks_trace() invoked.
+[    0.513915][    T1] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[    0.514605][    T1] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.515753][    T1] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.515976][    T1] audit: initializing netlink subsys (disabled)
+[    0.517301][   T40] audit: type=2000 audit(0.484:1): state=initialized audit_enabled=0 res=1
+[    0.530512][    T1] thermal_sys: Registered thermal governor 'step_wise'
+[    0.530536][    T1] thermal_sys: Registered thermal governor 'user_space'
+[    0.530557][    T1] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.532880][    T1] cpuidle: using governor menu
+[    0.542055][    T1] [ASoC:POWER] there is no analog node!
+[    0.543677][    T1] vendor_abi: table [T] inconsistent (missing bits=28)
+[    0.543713][    T1] vendor_abi: cpu_hwcaps 5.4 = 0x0000000000802438 (bits the blob reads: 4=1 23=1)
+[    0.543730][    T1] vendor_abi: arm64 5.4 ABI provider active: kimage_vaddr=0xffffffc080000000, const_caps_ready=none (blob uses the bitmap path)
+[    0.545530][    T1] NET: Registered PF_QIPCRTR protocol family
+[    0.556007][    T1] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.560853][    T1] ASID allocator initialised with 32768 entries
+[    0.674283][   T38] Callback from call_rcu_tasks() invoked.
+[    0.695085][    T1] iommu: Default domain type: Translated
+[    0.695121][    T1] iommu: DMA domain TLB invalidation policy: strict mode
+[    0.715551][    T1] SCSI subsystem initialized
+[    0.723302][    T1] usbcore: registered new interface driver usbfs
+[    0.723614][    T1] usbcore: registered new interface driver hub
+[    0.723744][    T1] usbcore: registered new device driver usb
+[    0.736247][    T1] mc: Linux media interface: v0.10
+[    0.739916][    T1] videodev: Linux video capture interface: v2.00
+[    0.745493][    T1] pps_core: LinuxPPS API ver. 1 registered
+[    0.745523][    T1] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.747195][    T1] PTP clock support registered
+[    0.752273][    T1] EDAC MC: Ver: 3.0.0
+[    0.760919][    T1] scmi_core: SCMI protocol bus registered
+[    0.792932][    T1] Advanced Linux Sound Architecture Driver Initialized.
+[    0.817585][    T1] Bluetooth: Core ver 2.22
+[    0.817738][    T1] NET: Registered PF_BLUETOOTH protocol family
+[    0.817750][    T1] Bluetooth: HCI device and connection manager initialized
+[    0.817821][    T1] Bluetooth: HCI socket layer initialized
+[    0.817850][    T1] Bluetooth: L2CAP socket layer initialized
+[    0.817922][    T1] Bluetooth: SCO socket layer initialized
+[    0.828433][    T1] vgaarb: loaded
+[    0.842230][    T1] clocksource: Switched to clocksource arch_sys_counter
+[    0.897140][    T1] VFS: Disk quotas dquot_6.6.0
+[    0.897424][    T1] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.928476][    T1] sprd-vsp-pw: vsp_pw_domain_init
+[    0.975682][    T1] ------------[ cut here ]------------
+[    0.975715][    T1] memremap attempted on ram 0x000000009e000000 size: 0x493e00
+[    0.975783][    T1] WARNING: CPU: 0 PID: 1 at kernel/iomem.c:105 memremap+0x2bc/0x444
+[    0.975809][    T1] Modules linked in:
+[    0.975837][    T1] CPU: 0 UID: 0 PID: 1 Comm: swapper/0 Not tainted 6.18.52-VXTux-UMS512-artix #2 PREEMPT 
+[    0.975849][    T1] Hardware name: linux,dummy-virt (DT)
+[    0.975864][    T1] pstate: 60000005 (nZCv daif -PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    0.975874][    T1] pc : memremap+0x2bc/0x444
+[    0.975883][    T1] lr : memremap+0x2bc/0x444
+[    0.975892][    T1] sp : ffffffc08765bd20
+[    0.975903][    T1] x29: ffffffc08765bd20 x28: ffffffc0821c99d8 x27: ffffffc0821000b4
+[    0.975920][    T1] x26: ffffffc08201c048 x25: ffffffc0820e76d0 x24: 00000000000001c2
+[    0.975937][    T1] x23: ffffffc084e45000 x22: 0000000000493e00 x21: 0000000000000000
+[    0.975953][    T1] x20: 0000000000000000 x19: 0000000000000004 x18: 0000000000000000
+[    0.975969][    T1] x17: 3030306539303030 x16: 3030303030783020 x15: 6d6172206e6f2064
+[    0.975985][    T1] x14: 000000000004ffff x13: ffffffc084e6d680 x12: 0000000000000486
+[    0.976001][    T1] x11: 0000000000000182 x10: ffffffc0853ed680 x9 : ffffffc084e6d680
+[    0.976022][    T1] x8 : 00000000fffeffff x7 : ffffffc0853ed680 x6 : 0000000000000000
+[    0.976038][    T1] x5 : 00000000000bfff4 x4 : 0000000000000000 x3 : 0000000000000000
+[    0.976056][    T1] x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffffff80803e8000
+[    0.976073][    T1] Call trace:
+[    0.976081][    T1]  memremap+0x2bc/0x444 (P)
+[    0.976101][    T1]  lkfb_init+0x3c/0x1fc
+[    0.976116][    T1]  do_one_initcall+0x84/0x380
+[    0.976128][    T1]  kernel_init_freeable+0x270/0x390
+[    0.976149][    T1]  kernel_init+0x24/0x1f4
+[    0.976163][    T1]  ret_from_fork+0x10/0x20
+[    0.976178][    T1] irq event stamp: 40840
+[    0.976185][    T1] hardirqs last  enabled at (40839): [<ffffffc0801063dc>] __up_console_sem+0x74/0x94
+[    0.976203][    T1] hardirqs last disabled at (40840): [<ffffffc08146c62c>] el1_brk64+0x20/0x5c
+[    0.976214][    T1] softirqs last  enabled at (40822): [<ffffffc080069078>] handle_softirqs+0x5f0/0x634
+[    0.976227][    T1] softirqs last disabled at (40817): [<ffffffc080010308>] __do_softirq+0x14/0x20
+[    0.976236][    T1] ---[ end trace 0000000000000000 ]---
+[    0.976252][    T1] vxtux-lkfb: memremap(WC) failed, using __va + per-blit flush
+[    0.980979][    T1] Console: switching to colour frame buffer device 150x125
+[    0.983073][    T1] vxtux-lkfb: LK fb 0x9e000000 1200x2000/16bpp registered, fbcon active
+[    0.983569][    T1] <4>[    0.203872][    T0]    hard-irq read-recursion #3/231:      |  ok  |  ok  |
+[    0.983582][    T1] <4>[    0.205239][    T0]    soft-irq read-recursion #3/231:      |  ok  |  ok  |
+[    0.983594][    T1] <4>[    0.206572][    T0]    hard-irq read-recursion #3/312:      |  ok  |  ok  |
+[    0.983605][    T1] <4>[    0.207900][    T0]    soft-irq read-recursion #3/312:      |  ok  |  ok  |
+[    0.983619][    T1] <4>[    0.209274][    T0]    hard-irq read-recursion #3/321:      |  ok  |  ok  |
+[    0.983629][    T1] <4>[    0.210606][    T0]    soft-irq read-recursion #3/321:      |  ok  |  ok  |
+[    0.983640][    T1] <4>[    0.211947][    T0]   --------------------------------------------------------------------------
+[    0.983650][    T1] <4>[    0.211950][    T0]   | Wound/wait tests |
+[    0.983661][    T1] <4>[    0.211952][    T0]   ---------------------
+[    0.983671][    T1] <4>[    0.211953][    T0]                   ww api failures:  ok  |  ok  |  ok  |
+[    0.983681][    T1] <4>[    0.214064][    T0]                ww contexts mixing:  ok  |  ok  |
+[    0.983691][    T1] <4>[    0.215399][    T0]              finishing ww context:  ok  |  ok  |  ok  |  ok  |
+[    0.983702][    T1] <4>[    0.218114][    T0]                locking mismatches:  ok  |  ok  |  ok  |
+[    0.983712][    T1] <4>[    0.220060][    T0]                  EDEADLK handling:  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |  ok  |
+[    0.983723][    T1] <4>[    0.226834][    T0]            spinlock nest unlocked:  ok  |
+[    0.983733][    T1] <4>[    0.227452][    T0]                spinlock nest test:  ok  |
+[    0.983744][    T1] <4>[    0.228168][    T0]   -----------------------------------------------------
+[    0.983754][    T1] <4>[    0.228171][    T0]                                  |block | try  |context|
+[    0.983764][    T1] <4>[    0.228173][    T0]   -----------------------------------------------------
+[    0.983775][    T1] <4>[    0.228175][    T0]                           context:  ok  |  ok  |  ok  |
+[    0.983785][    T1] <4>[    0.230217][    T0]                               try:  ok  |  ok  |  ok  |
+[    0.983795][    T1] <4>[    0.232122][    T0]                             block:  ok  |  ok  |  ok  |
+[    0.983805][    T1] <4>[    0.234075][    T0]                          spinlock:  ok  |  ok  |  ok  |
+[    0.983829][    T1] <4>[    0.236125][    T0]   --------------------------------------------------------------------------
+[    0.983840][    T1] <4>[    0.236128][    T0]   | queued read lock tests |
+[    0.983850][    T1] <4>[    0.236129][    T0]   ---------------------------
+[    0.983860][    T1] <4>[    0.236131][    T0]       hardirq read-lock/lock-read:  ok  |
+[    0.983879][    T1] <4>[    0.236816][    T0]       hardirq lock-read/read-lock:  ok  |
+[    0.983890][    T1] <4>[    0.237510][    T0]                 hardirq inversion:  ok  |
+[    0.983900][    T1] <4>[    0.238176][    T0]   --------------------
+[    0.983910][    T1] <4>[    0.238178][    T0]   | fs_reclaim tests |
+[    0.983920][    T1] <4>[    0.238180][    T0]   --------------------
+[    0.983931][    T1] <4>[    0.238182][    T0]                   correct nesting:  ok  |
+[    0.983941][    T1] <4>[    0.238766][    T0]                     wrong nesting:  ok  |
+[    0.983951][    T1] <4>[    0.239340][    T0]                 protected nesting:  ok  |
+[    0.983961][    T1] <4>[    0.239915][    T0]   --------------------------------------------------------------------------
+[    0.983971][    T1] <4>[    0.239918][    T0]   | wait context tests |
+[    0.983981][    T1] <4>[    0.239920][    T0]   --------------------------------------------------------------------------
+[    0.983992][    T1] <4>[    0.239922][    T0]                                  | rcu  | raw  | spin |mutex |
+[    0.984002][    T1] <4>[    0.239924][    T0]   --------------------------------------------------------------------------
+[    0.984012][    T1] <4>[    0.239926][    T0]                in hardirq context:  ok  |  ok  |  ok  |  ok  |
+[    0.984022][    T1] <4>[    0.242402][    T0] in hardirq context (not threaded):  ok  |  ok  |  ok  |  ok  |
+[    0.984032][    T1] <4>[    0.244848][    T0]                in softirq context:  ok  |  ok  |  ok  |  ok  |
+[    0.984043][    T1] <4>[    0.247307][    T0]                    in RCU context:  ok  |  ok  |  ok  |  ok  |
+[    0.984053][    T1] <4>[    0.249763][    T0]                 in RCU-bh context:  ok  |  ok  |  ok  |  ok  |
+[    0.984063][    T1] <4>[    0.252215][    T0]              in RCU-sched context:  ok  |  ok  |  ok  |  ok  |
+[    0.984073][    T1] <4>[    0.254686][    T0]           in RAW_SPINLOCK context:  ok  |  ok  |  ok  |  ok  |
+[    0.984083][    T1] <4>[    0.257318][    T0]               in SPINLOCK context:  ok  |  ok  |  ok  |  ok  |
+[    0.984094][    T1] <4>[    0.259951][    T0]                  in MUTEX context:  ok  |  ok  |  ok  |  ok  |
+[    0.984104][    T1] <4>[    0.262589][    T0]   --------------------------------------------------------------------------
+[    0.984114][    T1] <4>[    0.262591][    T0]   | local_lock tests |
+[    0.984124][    T1] <4>[    0.262593][    T0]   ---------------------
+[    0.984134][    T1] <4>[    0.262602][    T0]           local_lock inversion  2:  ok  |
+[    0.984144][    T1] <4>[    0.263275][    T0]           local_lock inversion 3A:  ok  |
+[    0.984154][    T1] <4>[    0.264016][    T0]           local_lock inversion 3B:  ok  |
+[    0.984164][    T1] <4>[    0.264756][    T0]       hardirq_unsafe_softirq_safe:  ok  |
+[    0.984174][    T1] <4>[    0.265572][    T0]   --------------------------------------------------------------------------
+[    0.984185][    T1] <4>[    0.265575][    T0]   | lockdep_set_subclass() name test|
+[    0.984195][    T1] <4>[    0.265577][    T0]   -----------------------------------
+[    0.984205][    T1] <4>[    0.265579][    T0]     compare name before and after:  ok  |
+[    0.984215][    T1] <4>[    0.266198][    T0] -------------------------------------------------------
+[    0.984225][    T1] <4>[    0.266207][    T0] Good, all 395 testcases passed! |
+[    0.984235][    T1] <4>[    0.266211][    T0] ---------------------------------
+[    0.984245][    T1] <6>[    0.266293][    T0] Calibrating delay loop (skipped), value calculated using timer frequency.. 52.00 BogoMIPS (lpj=104000)
+[    0.984256][    T1] <6>[    0.266302][    T0] pid_max: default: 32768 minimum: 301
+[    0.984266][    T1] <6>[    0.270900][    T0] LSM: initializing lsm=capability,selinux
+[    0.984276][    T1] <6>[    0.275173][    T0] SELinux:  Initializing.
+[    0.984286][    T1] <6>[    0.285250][    T0] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.984297][    T1] <6>[    0.285329][    T0] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.984307][    T1] <6>[    0.295961][    T0] Running RCU synchronous self tests
+[    0.984317][    T1] <6>[    0.295978][    T0] Running RCU synchronous self tests
+[    0.984327][    T1] <4>[    0.297243][    T1] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    0.984337][    T1] <6>[    0.312579][    T1] vxtux-it: panel tracer on: 8x16 font, 125 rows, 150 cols
+[    0.984347][    T1] <6>[    0.313961][    T1] rcu: Hierarchical SRCU implementation.
+[    0.984361][    T1] <6>[    0.313967][    T1] rcu: 	Max phase no-delay instances is 1000.
+[    0.984371][    T1] <6>[    0.314756][    T1] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.984384][    T1] <6>[    0.317260][    T1] EFI services will not be available.
+[    0.984394][    T1] <6>[    0.318376][    T1] smp: Bringing up secondary CPUs ...
+[    0.984404][    T1] <6>[    0.346681][    T0] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[    0.984415][    T1] <6>[    0.346758][    T0] Detected VIPT I-cache on CPU1
+[    0.984425][    T1] <6>[    0.346859][    T0] GICv3: CPU1: found redistributor 1 region 0:0x000000003ff90000
+[    0.984435][    T1] <6>[    0.347011][    T0] GICv3: CPU1: using allocated LPI pending table @0x00000001002c0000
+[    0.984445][    T1] <6>[    0.347197][    T0] CPU1: Booted secondary processor 0x0000000001 [0x411fd050]
+[    0.984455][    T1] <6>[    0.377226][    T0] Detected VIPT I-cache on CPU2
+[    0.984465][    T1] <6>[    0.377326][    T0] GICv3: CPU2: found redistributor 2 region 0:0x000000003ffb0000
+[    0.984476][    T1] <6>[    0.377453][    T0] GICv3: CPU2: using allocated LPI pending table @0x00000001002d0000
+[    0.984511][    T1] <6>[    0.377593][    T0] CPU2: Booted secondary processor 0x0000000002 [0x413fd0a1]
+[    0.984522][    T1] <6>[    0.406976][    T0] Detected VIPT I-cache on CPU3
+[    0.984533][    T1] <6>[    0.407106][    T0] GICv3: CPU3: found redistributor 3 region 0:0x000000003ffd0000
+[    0.984543][    T1] <6>[    0.407230][    T0] GICv3: CPU3: using allocated LPI pending table @0x00000001002e0000
+[    0.984554][    T1] <6>[    0.407380][    T0] CPU3: Booted secondary processor 0x0000000003 [0x411fd050]
+[    0.984565][    T1] <6>[    0.409182][    T1] smp: Brought up 1 node, 4 CPUs
+[    0.984576][    T1] <6>[    0.409193][    T1] SMP: Total of 4 processors activated.
+[    0.984587][    T1] <6>[    0.409197][    T1] CPU: All CPU(s) started at EL1
+[    0.984597][    T1] <6>[    0.409202][    T1] CPU features: detected: 32-bit EL0 Support
+[    0.984607][    T1] <6>[    0.409206][    T1] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.984618][    T1] <6>[    0.409210][    T1] CPU features: detected: Common not Private translations
+[    0.984628][    T1] <6>[    0.409213][    T1] CPU features: detected: CRC32 instructions
+[    0.984638][    T1] <6>[    0.409221][    T1] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.984648][    T1] <6>[    0.409224][    T1] CPU features: detected: LSE atomic instructions
+[    0.984658][    T1] <6>[    0.409227][    T1] CPU features: detected: Privileged Access Never
+[    0.984668][    T1] <6>[    0.409230][    T1] CPU features: detected: PMUv3
+[    0.984678][    T1] <6>[    0.409233][    T1] CPU features: detected: RAS Extension Support
+[    0.984689][    T1] <6>[    0.410462][    T1] alternatives: applying system-wide alternatives
+[    0.984699][    T1] <6>[    0.423521][    T1] CPU features: detected: Hardware dirty bit management on CPU0,2
+[    0.984709][    T1] <6>[    0.428969][    T1] Memory: 3836352K/4194304K available (20992K kernel code, 9778K rwdata, 12672K rodata, 46208K init, 31167K bss, 311568K reserved, 32768K cma-reserved)
+[    0.984720][    T1] <6>[    0.434525][    T1] devtmpfs: initialized
+[    0.984730][    T1] <6>[    0.453523][    T1] Running RCU synchronous self tests
+[    0.984740][    T1] <6>[    0.453583][    T1] Running RCU synchronous self tests
+[    0.984753][    T1] <6>[    0.455764][    T1] Running RCU Tasks wait API self tests
+[    0.984765][    T1] <6>[    0.457284][    T1] Running RCU Tasks Trace wait API self tests
+[    0.984775][    T1] <6>[    0.478053][    T1] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.984786][    T1] <6>[    0.478692][    T1] posixtimers hash table entries: 2048 (order: 6, 147456 bytes, linear)
+[    0.984796][    T1] <6>[    0.478995][    T1] futex hash table entries: 1024 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+[    0.984807][    T1] <6>[    0.491348][    T1] 2512 pages in range for non-PLT usage
+[    0.984817][    T1] <6>[    0.491356][    T1] 494032 pages in range for PLT usage
+[    0.984827][    T1] <6>[    0.492960][    T1] pinctrl core: initialized pinctrl subsystem
+[    0.984838][    T1] <6>[    0.496002][    T1] DMI not present or invalid.
+[    0.984848][    T1] <6>[    0.497036][    T1] printk: legacy console [bldb-1] enabled
+[    0.984858][    T1] <6>[    0.500348][    T1] bldb: BLDB siap -- ring 16 MiB di /dev/bldb0 (Berry Lab Foundation)
+[    0.984872][    T1] <6>[    0.505987][    T1] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.984882][    T1] <6>[    0.506025][   T39] Callback from call_rcu_tasks_trace() invoked.
+[    0.984892][    T1] <6>[    0.513915][    T1] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[    0.984903][    T1] <6>[    0.514605][    T1] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.984913][    T1] <6>[    0.515753][    T1] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.984925][    T1] <6>[    0.515976][    T1] audit: initializing netlink subsys (disabled)
+[    0.984935][    T1] <5>[    0.517301][   T40] audit: type=2000 audit(0.484:1): state=initialized audit_enabled=0 res=1
+[    0.984946][    T1] <6>[    0.530512][    T1] thermal_sys: Registered thermal governor 'step_wise'
+[    0.984956][    T1] <6>[    0.530536][    T1] thermal_sys: Registered thermal governor 'user_space'
+[    0.984966][    T1] <6>[    0.530557][    T1] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.984976][    T1] <6>[    0.532880][    T1] cpuidle: using governor menu
+[    0.984986][    T1] <6>[    0.542055][    T1] [ASoC:POWER] there is no analog node!
+[    0.984996][    T1] <4>[    0.543677][    T1] vendor_abi: table [T] inconsistent (missing bits=28)
+[    0.985007][    T1] <6>[    0.543713][    T1] vendor_abi: cpu_hwcaps 5.4 = 0x0000000000802438 (bits the blob reads: 4=1 23=1)
+[    0.985017][    T1] <6>[    0.543730][    T1] vendor_abi: arm64 5.4 ABI provider active: kimage_vaddr=0xffffffc080000000, const_caps_ready=none (blob uses the bitmap path)
+[    0.985028][    T1] <6>[    0.545530][    T1] NET: Registered PF_QIPCRTR protocol family
+[    0.985038][    T1] <6>[    0.556007][    T1] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.985048][    T1] <6>[    0.560853][    T1] ASID allocator initialised with 32768 entries
+[    0.985059][    T1] <6>[    0.674283][   T38] Callback from call_rcu_tasks() invoked.
+[    0.985069][    T1] <6>[    0.695085][    T1] iommu: Default domain type: Translated
+[    0.985079][    T1] <6>[    0.695121][    T1] iommu: DMA domain TLB invalidation policy: strict mode
+[    0.985089][    T1] <5>[    0.715551][    T1] SCSI subsystem initialized
+[    0.985099][    T1] <6>[    0.723302][    T1] usbcore: registered new interface driver usbfs
+[    0.985109][    T1] <6>[    0.723614][    T1] usbcore: registered new interface driver hub
+[    0.985119][    T1] <6>[    0.723744][    T1] usbcore: registered new device driver usb
+[    0.985129][    T1] <6>[    0.736247][    T1] mc: Linux media interface: v0.10
+[    0.985139][    T1] <6>[    0.739916][    T1] videodev: Linux video capture interface: v2.00
+[    0.985149][    T1] <6>[    0.745493][    T1] pps_core: LinuxPPS API ver. 1 registered
+[    0.985160][    T1] <6>[    0.745523][    T1] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.985170][    T1] <6>[    0.747195][    T1] PTP clock support registered
+[    0.985180][    T1] <6>[    0.752273][    T1] EDAC MC: Ver: 3.0.0
+[    0.985191][    T1] <6>[    0.760919][    T1] scmi_core: SCMI protocol bus registered
+[    0.985201][    T1] <6>[    0.792932][    T1] Advanced Linux Sound Architecture Driver Initialized.
+[    0.985211][    T1] <6>[    0.817585][    T1] Bluetooth: Core ver 2.22
+[    0.985221][    T1] <6>[    0.817738][    T1] NET: Registered PF_BLUETOOTH protocol family
+[    0.985231][    T1] <6>[    0.817750][    T1] Bluetooth: HCI device and connection manager initialized
+[    0.985241][    T1] <6>[    0.817821][    T1] Bluetooth: HCI socket layer initialized
+[    0.985251][    T1] <6>[    0.817850][    T1] Bluetooth: L2CAP socket layer initialized
+[    0.985261][    T1] <6>[    0.817922][    T1] Bluetooth: SCO socket layer initialized
+[    0.985272][    T1] <6>[    0.828433][    T1] vgaarb: loaded
+[    0.985282][    T1] <6>[    0.842230][    T1] clocksource: Switched to clocksource arch_sys_counter
+[    0.985292][    T1] <5>[    0.897140][    T1] VFS: Disk quotas dquot_6.6.0
+[    0.985302][    T1] <6>[    0.897424][    T1] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.985312][    T1] <6>[    0.928476][    T1] sprd-vsp-pw: vsp_pw_domain_init
+[    0.985322][    T1] <4>[    0.975682][    T1] ------------[ cut here ]------------
+[    0.985332][    T1] <4>[    0.975715][    T1] memremap attempted on ram 0x000000009e000000 size: 0x493e00
+[    0.985343][    T1] <4>[    0.975783][    T1] WARNING: CPU: 0 PID: 1 at kernel/iomem.c:105 memremap+0x2bc/0x444
+[    0.985356][    T1] <4>[    0.975809][    T1] Modules linked in:
+[    0.985366][    T1] <4>[    0.975837][    T1] CPU: 0 UID: 0 PID: 1 Comm: swapper/0 Not tainted 6.18.52-VXTux-UMS512-artix #2 PREEMPT 
+[    0.985377][    T1] <4>[    0.975849][    T1] Hardware name: linux,dummy-virt (DT)
+[    0.985388][    T1] <4>[    0.975864][    T1] pstate: 60000005 (nZCv daif -PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    0.985399][    T1] <4>[    0.975874][    T1] pc : memremap+0x2bc/0x444
+[    0.985411][    T1] <4>[    0.975883][    T1] lr : memremap+0x2bc/0x444
+[    0.985422][    T1] <4>[    0.975892][    T1] sp : ffffffc08765bd20
+[    0.985432][    T1] <4>[    0.975903][    T1] x29: ffffffc08765bd20 x28: ffffffc0821c99d8 x27: ffffffc0821000b4
+[    0.985443][    T1] <4>[    0.975920][    T1] x26: ffffffc08201c048 x25: ffffffc0820e76d0 x24: 00000000000001c2
+[    0.985453][    T1] <4>[    0.975937][    T1] x23: ffffffc084e45000 x22: 0000000000493e00 x21: 0000000000000000
+[    0.985463][    T1] <4>[    0.975953][    T1] x20: 0000000000000000 x19: 0000000000000004 x18: 0000000000000000
+[    0.985474][    T1] <4>[    0.975969][    T1] x17: 3030306539303030 x16: 3030303030783020 x15: 6d6172206e6f2064
+[    0.985484][    T1] <4>[    0.975985][    T1] x14: 000000000004ffff x13: ffffffc084e6d680 x12: 0000000000000486
+[    0.985494][    T1] <4>[    0.976001][    T1] x11: 0000000000000182 x10: ffffffc0853ed680 x9 : ffffffc084e6d680
+[    0.985504][    T1] <4>[    0.976022][    T1] x8 : 00000000fffeffff x7 : ffffffc0853ed680 x6 : 0000000000000000
+[    0.985514][    T1] <4>[    0.976038][    T1] x5 : 00000000000bfff4 x4 : 0000000000000000 x3 : 0000000000000000
+[    0.985524][    T1] <4>[    0.976056][    T1] x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffffff80803e8000
+[    0.985535][    T1] <4>[    0.976073][    T1] Call trace:
+[    0.985545][    T1] <4>[    0.976081][    T1]  memremap+0x2bc/0x444 (P)
+[    0.985555][    T1] <4>[    0.976101][    T1]  lkfb_init+0x3c/0x1fc
+[    0.985565][    T1] <4>[    0.976116][    T1]  do_one_initcall+0x84/0x380
+[    0.985575][    T1] <4>[    0.976128][    T1]  kernel_init_freeable+0x270/0x390
+[    0.985585][    T1] <4>[    0.976149][    T1]  kernel_init+0x24/0x1f4
+[    0.985595][    T1] <4>[    0.976163][    T1]  ret_from_fork+0x10/0x20
+[    0.985605][    T1] <4>[    0.976178][    T1] irq event stamp: 40840
+[    0.985615][    T1] <4>[    0.976185][    T1] hardirqs last  enabled at (40839): [<ffffffc0801063dc>] __up_console_sem+0x74/0x94
+[    0.985625][    T1] <4>[    0.976203][    T1] hardirqs last disabled at (40840): [<ffffffc08146c62c>] el1_brk64+0x20/0x5c
+[    0.985638][    T1] <4>[    0.976214][    T1] softirqs last  enabled at (40822): [<ffffffc080069078>] handle_softirqs+0x5f0/0x634
+[    0.985649][    T1] <4>[    0.976227][    T1] softirqs last disabled at (40817): [<ffffffc080010308>] __do_softirq+0x14/0x20
+[    0.985662][    T1] <4>[    0.976236][    T1] ---[ end trace 0000000000000000 ]---
+[    0.985673][    T1] <4>[    0.976252][    T1] vxtux-lkfb: memremap(WC) failed, using __va + per-blit flush
+[    0.985683][    T1] <6>[    0.980979][    T1] Console: switching to colour frame buffer device 150x125
+[    0.985693][    T1] <6>[    0.983073][    T1] vxtux-lkfb: LK fb 0x9e000000 1200x2000/16bpp registered, fbcon active
+[    0.985703][    T1] vxtux-lkfb: replayed 200/420 dmesg lines to fbcon
+[    0.987871][    T1] NET: Registered PF_INET protocol family
+[    0.988708][    T1] IP idents hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.992879][    T1] tcp_listen_portaddr_hash hash table entries: 2048 (order: 6, 147456 bytes, linear)
+[    0.993276][    T1] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.993582][    T1] TCP established hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    1.021170][    T1] TCP bind hash table entries: 32768 (order: 11, 4718592 bytes, vmalloc hugepage)
+[    1.026697][    T1] TCP: Hash tables configured (established 32768 bind 32768)
+[    1.029257][    T1] UDP hash table entries: 2048 (order: 7, 524288 bytes, linear)
+[    1.031035][    T1] UDP-Lite hash table entries: 2048 (order: 7, 524288 bytes, linear)
+[    1.032936][    T1] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    1.036871][    T1] NET: Registered PF_XDP protocol family
+[    1.037386][    T1] PCI: CLS 0 bytes, default 64
+[    1.048546][    T1] Initialise system trusted keyrings
+[    1.050030][    T1] workingset: timestamp_bits=46 max_order=20 bucket_order=0
+[    1.060943][    T1] fuse: init (API version 7.45)
+[    1.070300][    T1] cryptd: max_cpu_qlen set to 1000
+[    1.089516][    T1] NET: Registered PF_ALG protocol family
+[    1.089807][    T1] Key type asymmetric registered
+[    1.089873][    T1] Asymmetric key parser 'x509' registered
+[    1.090327][    T1] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 240)
+[    1.092805][    T1] io scheduler mq-deadline registered
+[    1.092835][    T1] io scheduler kyber registered
+[    1.093324][    T1] io scheduler bfq registered
+[    1.099149][    T1] pci-host-generic 40000000.pci: host bridge /pci ranges:
+[    1.099325][    T1] pci-host-generic 40000000.pci:       IO 0x0000000000..0x000000ffff -> 0x0000000000
+[    1.099477][    T1] pci-host-generic 40000000.pci:      MEM 0x0050000000..0x007fffffff -> 0x0050000000
+[    1.099768][    T1] pci-host-generic 40000000.pci: ECAM at [mem 0x40000000-0x4fffffff] for [bus 00]
+[    1.101287][    T1] pci-host-generic 40000000.pci: PCI host bridge to bus 0000:00
+[    1.101360][    T1] pci_bus 0000:00: root bus resource [bus 00]
+[    1.101392][    T1] pci_bus 0000:00: root bus resource [io  0x0000-0xffff]
+[    1.101420][    T1] pci_bus 0000:00: root bus resource [mem 0x50000000-0x7fffffff]
+[    1.120294][    T1] pci 0000:00:00.0: [1af4:1041] type 00 class 0x020000 conventional PCI endpoint
+[    1.121096][    T1] pci 0000:00:00.0: BAR 0 [io  0x6200-0x62ff]
+[    1.121196][    T1] pci 0000:00:00.0: BAR 1 [mem 0x50000000-0x500000ff]
+[    1.121246][    T1] pci 0000:00:00.0: BAR 2 [mem 0x50000400-0x500007ff]
+[    1.125356][    T1] pci 0000:00:00.0: BAR 2 [mem 0x50000000-0x500003ff]: assigned
+[    1.125470][    T1] pci 0000:00:00.0: BAR 0 [io  0x1000-0x10ff]: assigned
+[    1.125540][    T1] pci 0000:00:00.0: BAR 1 [mem 0x50000400-0x500004ff]: assigned
+[    1.125622][    T1] pci_bus 0000:00: resource 4 [io  0x0000-0xffff]
+[    1.125649][    T1] pci_bus 0000:00: resource 5 [mem 0x50000000-0x7fffffff]
+[    1.135474][    T1] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    1.160687][    T1] printk: legacy console [ttyS0] disabled
+[    1.164433][    T1] 1000000.U6_16550A: ttyS0 at MMIO 0x1000000 (irq = 14, base_baud = 115200) is a 16550A
+[    1.165187][    T1] printk: legacy console [ttyS0] enabled
+[    1.744289][    T1] 1001000.U6_16550A: ttyS1 at MMIO 0x1001000 (irq = 15, base_baud = 115200) is a 16550A
+[    1.762751][    T1] 1002000.U6_16550A: ttyS2 at MMIO 0x1002000 (irq = 16, base_baud = 115200) is a 16550A
+[    1.777882][    T1] 1003000.U6_16550A: ttyS3 at MMIO 0x1003000 (irq = 17, base_baud = 115200) is a 16550A
+[    1.786661][    T1] sprd-gsp: gsp_drv_init()-gsp device init begin
+[    1.787563][    T1] sprd-gsp: gsp_drv_init()-gsp device init end
+[    1.843737][    T1] brd: module loaded
+[    1.881580][    T1] loop: module loaded
+[    1.885905][    T1] zram: Added device: zram0
+[    1.893386][    T1] wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+[    1.894511][    T1] wireguard: Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+[    1.902083][    T1] tun: Universal TUN/TAP device driver, 1.6
+[    1.929872][    T1] CAN device driver interface
+[    1.930534][    T1] PPP generic driver version 2.4.2
+[    1.932364][    T1] PPP BSD Compression module registered
+[    1.933073][    T1] PPP Deflate Compression module registered
+[    1.933729][    T1] PPP MPPE Compression module registered
+[    1.934417][    T1] NET: Registered PF_PPPOX protocol family
+[    1.935087][    T1] PPTP driver version 0.8.5
+[    1.936702][    T1] mac80211_hwsim: initializing netlink
+[    1.951383][    T1] usbcore: registered new device driver r8152-cfgselector
+[    1.952461][    T1] usbcore: registered new interface driver r8152
+[    1.953468][    T1] usbcore: registered new interface driver cdc_ether
+[    1.954467][    T1] usbcore: registered new interface driver net1080
+[    1.955405][    T1] usbcore: registered new interface driver cdc_subset
+[    1.956333][    T1] usbcore: registered new interface driver zaurus
+[    1.957279][    T1] usbcore: registered new interface driver cdc_ncm
+[    1.958171][    T1] usbcore: registered new interface driver aqc111
+[    1.959166][    T1] usbcore: registered new interface driver r8153_ecm
+[    1.961377][    T1] usbcore: registered new interface driver cdc_acm
+[    1.962124][    T1] cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
+[    1.965549][    T1] usbcore: registered new interface driver uas
+[    1.966565][    T1] usbcore: registered new interface driver usb-storage
+[    1.968959][    T1] dummy_hcd dummy_hcd.0: USB Host+Gadget Emulator, driver 02 May 2005
+[    1.969963][    T1] dummy_hcd dummy_hcd.0: Dummy host controller
+[    1.970836][    T1] dummy_hcd dummy_hcd.0: new USB bus registered, assigned bus number 1
+[    1.972696][    T1] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.18
+[    1.973752][    T1] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    1.974702][    T1] usb usb1: Product: Dummy host controller
+[    1.975342][    T1] usb usb1: Manufacturer: Linux 6.18.52-VXTux-UMS512-artix dummy_hcd
+[    1.976220][    T1] usb usb1: SerialNumber: dummy_hcd.0
+[    1.981504][    T1] hub 1-0:1.0: USB hub found
+[    1.982575][    T1] hub 1-0:1.0: 1 port detected
+[    1.989570][    T1] g_ether gadget.0: HOST MAC be:e1:16:54:76:7a
+[    1.990442][    T1] g_ether gadget.0: MAC d2:28:e8:ad:58:32
+[    1.991525][    T1] g_ether gadget.0: Ethernet Gadget, version: Memorial Day 2008
+[    1.992419][    T1] g_ether gadget.0: g_ether ready
+[    1.994935][    T1] usbcore: registered new interface driver xpad
+[    1.999019][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 560: register main sensor:0
+[    2.000116][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 562: register sub sensor:0
+[    2.001209][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 564: register main2 sensor:0
+[    2.002318][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 566: register  sub2 sensor:0
+[    2.003355][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 568: register main3 sensor:0
+[    2.004409][    T1] SENSOR_DRV: 1: sprd_sensor_register_driver L 570: register  sub3 sensor:0
+[    2.005388][    T1] SENSOR_CORE: 1: sprd_sensor_core_module_init line=768: sensor register
+[    2.007855][    T1] SENSOR_CORE: 1: sprd_sensor_core_module_init line=771: create device node
+[    2.009160][    T1] gspca_main: v2.14.0 registered
+[    2.009992][    T1] usbcore: registered new interface driver uvcvideo
+[    2.011798][    T1] device-mapper: uevent: version 1.0.3
+[    2.014334][    T1] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    2.016817][    T1] Bluetooth: HCI UART driver ver 2.3
+[    2.017473][    T1] Bluetooth: HCI UART protocol H4 registered
+[    2.018385][    T1] Bluetooth: HCI UART protocol LL registered
+[    2.019358][    T1] Bluetooth: HCI UART protocol Broadcom registered
+[    2.020166][    T1] Bluetooth: HCI UART protocol QCA registered
+[    2.021723][    T1] sdhci: Secure Digital Host Controller Interface driver
+[    2.022599][    T1] sdhci: Copyright(c) Pierre Ossman
+[    2.023179][    T1] sdhci-pltfm: SDHCI platform and OF driver helper
+[    2.025521][    T1] hid: raw HID events driver (C) Jiri Kosina
+[    2.032606][    T1] usbcore: registered new interface driver usbhid
+[    2.033400][    T1] usbhid: USB HID core driver
+[    2.034401][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis302dl-spi
+[    2.035335][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis3lv02dl-accel
+[    2.036232][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis3dh-accel
+[    2.037120][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm330d-accel
+[    2.037985][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm330dl-accel
+[    2.038952][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm330dlc-accel
+[    2.039850][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis331dlh-accel
+[    2.040758][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm330-accel
+[    2.041614][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm303agr-accel
+[    2.042540][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis2dh12-accel
+[    2.043417][    T1] SPI driver st-accel-spi has no spi_device_id for st,lng2dm-accel
+[    2.044270][    T1] SPI driver st-accel-spi has no spi_device_id for st,h3lis331dl-accel
+[    2.045173][    T1] SPI driver st-accel-spi has no spi_device_id for st,lis331dl-accel
+[    2.046049][    T1] SPI driver st-accel-spi has no spi_device_id for st,lsm303c-accel
+[    2.047188][    T1] SPI driver st-gyro-spi has no spi_device_id for st,l3g4200d-gyro
+[    2.048057][    T1] SPI driver st-gyro-spi has no spi_device_id for st,lsm330d-gyro
+[    2.048920][    T1] SPI driver st-gyro-spi has no spi_device_id for st,lsm330dl-gyro
+[    2.049773][    T1] SPI driver st-gyro-spi has no spi_device_id for st,lsm330dlc-gyro
+[    2.050686][    T1] SPI driver st-gyro-spi has no spi_device_id for st,l3gd20-gyro
+[    2.051524][    T1] SPI driver st-gyro-spi has no spi_device_id for st,l3gd20h-gyro
+[    2.052369][    T1] SPI driver st-gyro-spi has no spi_device_id for st,l3g4is-gyro
+[    2.053221][    T1] SPI driver st-gyro-spi has no spi_device_id for st,lsm330-gyro
+[    2.054056][    T1] SPI driver st-gyro-spi has no spi_device_id for st,lsm9ds0-gyro
+[    2.055653][    T9] watchdog: NMI not fully supported
+[    2.056283][    T9] watchdog: Hard watchdog permanently disabled
+[    2.059636][    T1]  cs_system_cfg: CoreSight Configuration manager initialised
+[    2.060579][    T1] tmc: error registering AMBA driver
+[    2.061169][    T1] funnel: error registering AMBA driver
+[    2.061778][    T1] replicator: error registering AMBA driver
+[    2.062507][    T1] Error registering etm4x AMBA driver
+[    2.063118][    T1] stm: error registering AMBA driver
+[    2.064409][    T1] gnss: GNSS driver registered with major 511
+[    2.065527][    T1] Himax common touch panel driver init 123!
+[    2.066282][    T1] Himax check double loading
+[    2.066794][    T1] SPI driver himax_tp has no spi_device_id for himax,hxcommon
+[    2.073482][    T1] usbcore: registered new interface driver snd-usb-audio
+[    2.075308][    T1] GACT probability NOT on
+[    2.075904][    T1] Mirror/redirect action on
+[    2.076427][    T1] u32 classifier
+[    2.076871][    T1]     input device check on
+[    2.077373][    T1]     Actions configured
+[    2.081562][    T1] xt_time: kernel timezone is -0000
+[    2.082409][    T1] ipip: IPv4 and MPLS over IPv4 tunneling driver
+[    2.085142][    T1] gre: GRE over IPv4 demultiplexer driver
+[    2.085849][    T1] ip_gre: GRE over IPv4 tunneling driver
+[    2.092556][    T1] IPv4 over IPsec tunneling driver
+[    2.095493][    T1] Initializing XFRM netlink socket
+[    2.096259][    T1] IPsec XFRM device driver
+[    2.097615][    T1] NET: Registered PF_INET6 protocol family
+[    2.108334][    T1] Segment Routing with IPv6
+[    2.109061][    T1] In-situ OAM (IOAM) with IPv6
+[    2.109830][    T1] mip6: Mobile IPv6
+[    2.112794][    T1] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    2.117940][    T1] ip6_gre: GRE over IPv6 tunneling driver
+[    2.121030][    T1] NET: Registered PF_PACKET protocol family
+[    2.121809][    T1] NET: Registered PF_KEY protocol family
+[    2.122914][    T1] can: controller area network core
+[    2.124185][    T1] NET: Registered PF_CAN protocol family
+[    2.124923][    T1] can: raw protocol
+[    2.125555][    T1] can: broadcast manager protocol
+[    2.126184][    T1] can: netlink gateway - max_hops=1
+[    2.128041][    T1] Bluetooth: RFCOMM TTY layer initialized
+[    2.128908][    T1] Bluetooth: RFCOMM socket layer initialized
+[    2.129613][    T1] Bluetooth: RFCOMM ver 1.11
+[    2.130147][    T1] Bluetooth: HIDP (Human Interface Emulation) ver 1.2
+[    2.131031][    T1] Bluetooth: HIDP socket layer initialized
+[    2.131788][    T1] l2tp_core: L2TP core driver, V2.0
+[    2.132390][    T1] l2tp_ppp: PPPoL2TP kernel driver, V2.0
+[    2.133036][    T1] tipc: Activated (version 2.0.0)
+[    2.134142][    T1] NET: Registered PF_TIPC protocol family
+[    2.135344][    T1] tipc: Started in single node mode
+[    2.137572][    T1] NET: Registered PF_VSOCK protocol family
+[    2.222629][   T61] usb 1-1: new high-speed USB device number 2 using dummy_hcd
+[    2.247996][    T1] registered taskstats version 1
+[    2.249374][    T1] Loading compiled-in X.509 certificates
+[    2.360983][   T61] usb 1-1: Dual-Role OTG device on HNP port
+[    2.361951][   T61] usb 1-1: New USB device found, idVendor=0525, idProduct=a4a2, bcdDevice= 6.18
+[    2.363072][   T61] usb 1-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+[    2.363950][   T61] usb 1-1: Product: RNDIS/Ethernet Gadget
+[    2.364605][   T61] usb 1-1: Manufacturer: Linux 6.18.52-VXTux-UMS512-artix with dummy_udc
+[    2.374053][   T61] cdc_ether 1-1:1.0 usb1: register 'cdc_ether' at usb-dummy_hcd.0-1, CDC Ethernet Device, be:e1:16:54:76:7a
+[    2.575210][   T14] Trying to unpack rootfs image as initramfs...
+[    2.576953][   T14] rootfs image is not initramfs (broken padding); looks like an initrd
+[    2.853631][   T14] Freeing initrd memory: 41144K
+[    2.855465][   T67] kworker/u16:0 (67) used greatest stack depth: 13648 bytes left
+[    2.859202][   T69] kworker/u16:0 (69) used greatest stack depth: 13528 bytes left
+[    2.867965][    T1] Loaded X.509 cert 'Build time autogenerated kernel key: e7fe967eb9e60051d83bd53791aaa584ac41ea57'
+[    2.994670][    T1] debug_vm_pgtable: [debug_vm_pgtable         ]: Validating architecture page table helpers
+[    3.000380][    T1] Key type .fscrypt registered
+[    3.001035][    T1] Key type fscrypt-provisioning registered
+[    3.005822][    T1] sprd_wdf: get public api error in sprd_wdt -19
+[    3.007016][    T1] WCN BASE: init_wcn_sysfs
+[    3.012966][    T1] gnss_pmnotify_ctl_init
+[    3.014994][    T1] WCN BASEmarlin_init entry!
+[    3.015734][    T1] WCN BASE: entry!
+[    3.016461][    T1] cfg80211: Loading compiled-in X.509 certificates for regulatory database
+[    3.024711][    T1] Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'
+[    3.025971][    T1] Loaded X.509 cert 'wens: 61c038651aabdcf94bd0ac7ff06c7248db18c600'
+[    3.027857][   T55] faux_driver regulatory: Direct firmware load for regulatory.db failed with error -2
+[    3.029008][   T55] faux_driver regulatory: Falling back to sysfs fallback for: regulatory.db
+[    3.030553][    T1] clk: Disabling unused clocks
+[    3.032654][    T1] PM: genpd: Disabling unused power domains
+[    3.033701][    T1] ALSA device list:
+[    3.034193][    T1]   No soundcards found.
+[    3.034916][    T1] Warning: unable to open an initial console.
+[    3.092178][    T1] Freeing unused kernel memory: 46208K
+[    3.093026][    T1] rodata_test: all tests were successful
+[    3.093786][    T1] Run /init as init process
+[    3.103860][    T1] aes_ce_ccm: module verification failed: signature and/or required key missing - tainting kernel
+[    3.108099][    T1] LOAD OK   arch/arm64/crypto/aes-ce-ccm.ko
+[    3.112695][    T1] LOAD OK   arch/arm64/crypto/aes-neon-blk.ko
+[    3.116190][    T1] LOAD OK   crypto/crypto_engine.ko
+[    3.119350][    T1] LOAD OK   crypto/lzo-rle.ko
+[    3.122716][    T1] LOAD OK   crypto/lzo.ko
+[    3.126524][    T1] LOAD OK   drivers/clk/sprd/clk-sprd.ko
+[    3.131275][    T1] LOAD OK   drivers/clk/sprd/sc9860-clk.ko
+[    3.135974][    T1] LOAD OK   drivers/clk/sprd/sc9863a-clk.ko
+[    3.140753][    T1] LOAD OK   drivers/clk/sprd/ums512-clk.ko
+[    3.144037][    T1] sprd_systimer: no systimer or sysfrt dts node.
+[    3.144995][    T1] LOAD OK   drivers/clocksource/sprd-systimer.ko
+[    3.148300][    T1] LOAD OK   drivers/cpufreq/sprd-cpufreq-public.ko
+[    3.150434][    T1] sprd_cpufreq_v2: Unknown symbol sprd_sip_svc_get_handle (err -2)
+[    3.339560][    T1] LOAD OK   drivers/crypto/virtio/virtio_crypto.ko
+[    3.351587][    T1] LOAD OK   drivers/devfreq/sprd/apsys/apsys-dvfs.ko
+[    3.360428][    T1] ------------[ cut here ]------------
+[    3.361179][    T1] DEBUG_LOCKS_WARN_ON(lock->magic != lock)
+[    3.361195][    T1] WARNING: CPU: 3 PID: 1 at kernel/locking/mutex.c:577 __mutex_lock+0x228/0x818
+[    3.362868][    T1] Modules linked in: mmdvfs(E+) apsys_dvfs(E) virtio_crypto(E) sprd_cpufreq_public(E) sprd_systimer(E) ums512_clk(E) sc9863a_clk(E) sc9860_clk(E) clk_sprd(E) lzo(E) lzo_rle(E) crypto_engine(E) aes_neon_blk(E) aes_ce_ccm(E)
+[    3.365381][    T1] CPU: 3 UID: 0 PID: 1 Comm: init Tainted: G        W   E       6.18.52-VXTux-UMS512-artix #2 PREEMPT 
+[    3.366651][    T1] Tainted: [W]=WARN, [E]=UNSIGNED_MODULE
+[    3.367303][    T1] Hardware name: linux,dummy-virt (DT)
+[    3.367932][    T1] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    3.368839][    T1] pc : __mutex_lock+0x228/0x818
+[    3.369403][    T1] lr : __mutex_lock+0x228/0x818
+[    3.369968][    T1] sp : ffffffc08765b8b0
+[    3.370447][    T1] x29: ffffffc08765b920 x28: 0000000000000000 x27: ffffffc07f746218
+[    3.371371][    T1] x26: ffffffc07f6cd550 x25: ffffffc08765bc40 x24: 0000000000000000
+[    3.372299][    T1] x23: ffffffc07f6a6650 x22: 0000000000000000 x21: 0000000000000002
+[    3.373233][    T1] x20: 0000000000000000 x19: ffffffc07f746740 x18: ffffffffffe0f348
+[    3.374153][    T1] x17: 00000000c94fdafb x16: 00000000ba6ef3a6 x15: ffffffc084e6d568
+[    3.375074][    T1] x14: 0000000000000000 x13: ffffffc084e6d680 x12: 0000000000000a29
+[    3.375999][    T1] x11: 0000000000000363 x10: ffffffc0853f27c8 x9 : ffffffc084e6d680
+[    3.376932][    T1] x8 : 00000000fffeffff x7 : ffffffc0853ed680 x6 : 0000000000005148
+[    3.377857][    T1] x5 : 00000000000bfff4 x4 : 00000000ffff0363 x3 : 0000000000000000
+[    3.378782][    T1] x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffffff80803e8000
+[    3.379706][    T1] Call trace:
+[    3.380093][    T1]  __mutex_lock+0x228/0x818 (P)
+[    3.380662][    T1]  mutex_lock_nested+0x24/0x30
+[    3.381217][    T1]  register_ip_dvfs_ops+0x3c/0x114 [mmdvfs]
+[    3.381918][    T1]  mmsys_dvfs_init+0x1c/0x114 [mmdvfs]
+[    3.382566][    T1]  mmsys_module_init+0x14/0x194 [mmdvfs]
+[    3.383226][    T1]  do_one_initcall+0x84/0x380
+[    3.383771][    T1]  do_init_module+0x58/0x248
+[    3.384316][    T1]  load_module+0x2200/0x233c
+[    3.384854][    T1]  init_module_from_file+0x88/0xcc
+[    3.385445][    T1]  idempotent_init_module+0x190/0x288
+[    3.386070][    T1]  __arm64_sys_finit_module+0x6c/0xd8
+[    3.386695][    T1]  invoke_syscall+0x48/0x10c
+[    3.387228][    T1]  el0_svc_common.constprop.0+0x40/0xe8
+[    3.387869][    T1]  do_el0_svc+0x20/0x2c
+[    3.388349][    T1]  el0_svc+0x50/0x2e4
+[    3.388819][    T1]  el0t_64_sync_handler+0xa0/0xe4
+[    3.389399][    T1]  el0t_64_sync+0x19c/0x1a0
+[    3.389920][    T1] irq event stamp: 145581
+[    3.390417][    T1] hardirqs last  enabled at (145581): [<ffffffc081480b8c>] _raw_spin_unlock_irqrestore+0x68/0xa0
+[    3.391629][    T1] hardirqs last disabled at (145580): [<ffffffc081480830>] _raw_spin_lock_irqsave+0x7c/0x80
+[    3.392796][    T1] softirqs last  enabled at (144272): [<ffffffc080069078>] handle_softirqs+0x5f0/0x634
+[    3.393930][    T1] softirqs last disabled at (144267): [<ffffffc080010308>] __do_softirq+0x14/0x20
+[    3.394987][    T1] ---[ end trace 0000000000000000 ]---
+[    3.395711][    T1] mmdvfs: dvfs ops: MMSYS_DVFS_OPS
+[    3.396442][    T1] mmdvfs: dvfs ops: fd_DVFS_OPS
+[    3.397065][    T1] mmdvfs: dvfs ops: isp_DVFS_OPS
+[    3.397653][    T1] mmdvfs: dvfs ops: dcam_axi_DVFS_OPS
+[    3.398335][    T1] mmdvfs: dvfs ops: dcam_if_DVFS_OPS
+[    3.398960][    T1] mmdvfs: dvfs ops: jpg_DVFS_OPS
+[    3.399543][    T1] mmdvfs: dvfs ops: cpp_DVFS_OPS
+[    3.400127][    T1] mmdvfs: dvfs ops: mtx_DVFS_OPS
+[    3.400892][    T1] LOAD OK   drivers/devfreq/sprd/mm/mmdvfs.ko
+[    3.404159][    T1] LOAD OK   drivers/devfreq/sprd/sprd-top-dvfs.ko
+[    3.404988][    T1] SKIP (butuh secure world Trusty) drivers/dma-buf/sprd/ion_ipc_trusty.ko
+[    3.408387][    T1] LOAD OK   drivers/extcon/extcon-usb-gpio.ko
+[    3.411531][    T1] LOAD OK   drivers/gpio/gpio-pmic-eic-sprd.ko
+[    3.414381][    T1] LOAD OK   drivers/iio/adc/sc27xx_adc.ko
+[    3.417200][    T1] SPI driver sensorhub has no spi_device_id for samsung,sensorhub-rinato
+[    3.418181][    T1] SPI driver sensorhub has no spi_device_id for samsung,sensorhub-thermostat
+[    3.419436][    T1] LOAD OK   drivers/iio/common/ssp_sensors/sensorhub.ko
+[    3.426150][    T1] [NVT-ts] nvt_driver_init 2556: start
+[    3.426956][    T1] SPI driver NVT-ts has no spi_device_id for novatek,NVT-ts-spi
+[    3.427914][    T1] [NVT-ts] nvt_driver_init 2565: nvt_driver_init: finished
+[    3.428974][    T1] LOAD OK   drivers/input/touchscreen/novatek_nvt_ts_spi/novatek_ts_spi.ko
+[    3.433368][    T1] LOAD OK   drivers/mailbox/unisoc-mailbox.ko
+[    3.436402][    T1] LOAD OK   drivers/media/dvb-frontends/a8293.ko
+[    3.439710][    T1] LOAD OK   drivers/media/dvb-frontends/af9033.ko
+[    3.442470][    T1] LOAD OK   drivers/media/dvb-frontends/ascot2e.ko
+[    3.444898][    T1] LOAD OK   drivers/media/dvb-frontends/atbm8830.ko
+[    3.447521][    T1] LOAD OK   drivers/media/dvb-frontends/au8522_common.ko
+[    3.450324][    T1] LOAD OK   drivers/media/dvb-frontends/au8522_decoder.ko
+[    3.453184][    T1] LOAD OK   drivers/media/dvb-frontends/au8522_dig.ko
+[    3.456378][    T1] LOAD OK   drivers/media/dvb-frontends/bcm3510.ko
+[    3.459820][    T1] LOAD OK   drivers/media/dvb-frontends/cx22700.ko
+[    3.463071][    T1] LOAD OK   drivers/media/dvb-frontends/cx22702.ko
+[    3.465575][    T1] LOAD OK   drivers/media/dvb-frontends/cx24110.ko
+[    3.468998][    T1] LOAD OK   drivers/media/dvb-frontends/cx24113.ko
+[    3.472056][    T1] LOAD OK   drivers/media/dvb-frontends/cx24116.ko
+[    3.474982][    T1] LOAD OK   drivers/media/dvb-frontends/cx24117.ko
+[    3.478363][    T1] LOAD OK   drivers/media/dvb-frontends/cx24120.ko
+[    3.481051][    T1] LOAD OK   drivers/media/dvb-frontends/cx24123.ko
+[    3.483861][    T1] LOAD OK   drivers/media/dvb-frontends/cxd2099.ko
+[    3.487985][    T1] LOAD OK   drivers/media/dvb-frontends/cxd2820r.ko
+[    3.491621][    T1] LOAD OK   drivers/media/dvb-frontends/cxd2841er.ko
+[    3.495418][    T1] LOAD OK   drivers/media/dvb-frontends/cxd2880/cxd2880.ko
+[    3.497965][    T1] LOAD OK   drivers/media/dvb-frontends/dib0070.ko
+[    3.501165][    T1] LOAD OK   drivers/media/dvb-frontends/dib0090.ko
+[    3.505024][    T1] LOAD OK   drivers/media/dvb-frontends/dib3000mb.ko
+[    3.506421][    T1] dib3000mc: Unknown symbol dibx000_init_i2c_master (err -2)
+[    3.507290][    T1] dib3000mc: Unknown symbol dibx000_get_i2c_adapter (err -2)
+[    3.508099][    T1] dib3000mc: Unknown symbol dibx000_exit_i2c_master (err -2)
+[    3.616470][    T1] dib7000m: Unknown symbol dibx000_init_i2c_master (err -2)
+[    3.617482][    T1] dib7000m: Unknown symbol dibx000_get_i2c_adapter (err -2)
+[    3.618422][    T1] dib7000m: Unknown symbol dibx000_exit_i2c_master (err -2)
+[    3.708261][    T1] dib7000p: Unknown symbol dibx000_init_i2c_master (err -2)
+[    3.709430][    T1] dib7000p: Unknown symbol dibx000_get_i2c_adapter (err -2)
+[    3.710591][    T1] dib7000p: Unknown symbol dibx000_reset_i2c_master (err -2)
+[    3.711628][    T1] dib7000p: Unknown symbol dibx000_exit_i2c_master (err -2)
+[    3.805370][    T1] dib8000: Unknown symbol dibx000_init_i2c_master (err -2)
+[    3.807120][    T1] dib8000: Unknown symbol dibx000_get_i2c_adapter (err -2)
+[    3.808630][    T1] dib8000: Unknown symbol dibx000_reset_i2c_master (err -2)
+[    3.810031][    T1] dib8000: Unknown symbol dibx000_exit_i2c_master (err -2)
+[    3.902805][    T1] dib9000: Unknown symbol dibx000_init_i2c_master (err -2)
+[    3.904766][    T1] dib9000: Unknown symbol dibx000_get_i2c_adapter (err -2)
+[    3.906621][    T1] dib9000: Unknown symbol dibx000_reset_i2c_master (err -2)
+[    3.908499][    T1] dib9000: Unknown symbol dibx000_exit_i2c_master (err -2)
+[    4.007334][    T1] LOAD OK   drivers/media/dvb-frontends/dibx000_common.ko
+[    4.017797][    T1] LOAD OK   drivers/media/dvb-frontends/drx39xyj/drx39xyj.ko
+[    4.024598][    T1] LOAD OK   drivers/media/dvb-frontends/drxd.ko
+[    4.031120][    T1] LOAD OK   drivers/media/dvb-frontends/drxk.ko
+[    4.034599][    T1] LOAD OK   drivers/media/dvb-frontends/ds3000.ko
+[    4.039609][    T1] LOAD OK   drivers/media/dvb-frontends/dvb-pll.ko
+[    4.043018][    T1] LOAD OK   drivers/media/dvb-frontends/ec100.ko
+[    4.046274][    T1] LOAD OK   drivers/media/dvb-frontends/helene.ko
+[    4.050770][    T1] LOAD OK   drivers/media/dvb-frontends/horus3a.ko
+[    4.053279][    T1] LOAD OK   drivers/media/dvb-frontends/isl6405.ko
+[    4.056596][    T1] LOAD OK   drivers/media/dvb-frontends/isl6421.ko
+[    4.059113][    T1] LOAD OK   drivers/media/dvb-frontends/isl6423.ko
+[    4.061761][    T1] LOAD OK   drivers/media/dvb-frontends/itd1000.ko
+[    4.064338][    T1] LOAD OK   drivers/media/dvb-frontends/ix2505v.ko
+[    4.067274][    T1] LOAD OK   drivers/media/dvb-frontends/l64781.ko
+[    4.069963][    T1] LOAD OK   drivers/media/dvb-frontends/lg2160.ko
+[    4.072780][    T1] LOAD OK   drivers/media/dvb-frontends/lgdt3305.ko
+[    4.076620][    T1] LOAD OK   drivers/media/dvb-frontends/lgdt330x.ko
+[    4.079233][    T1] LOAD OK   drivers/media/dvb-frontends/lgs8gl5.ko
+[    4.082078][    T1] LOAD OK   drivers/media/dvb-frontends/lgs8gxx.ko
+[    4.084810][    T1] LOAD OK   drivers/media/dvb-frontends/lnbh25.ko
+[    4.087672][    T1] LOAD OK   drivers/media/dvb-frontends/lnbh29.ko
+[    4.090475][    T1] LOAD OK   drivers/media/dvb-frontends/lnbp21.ko
+[    4.094049][    T1] LOAD OK   drivers/media/dvb-frontends/lnbp22.ko
+[    4.096897][    T1] LOAD OK   drivers/media/dvb-frontends/m88rs2000.ko
+[    4.100532][    T1] LOAD OK   drivers/media/dvb-frontends/mb86a16.ko
+[    4.103980][    T1] LOAD OK   drivers/media/dvb-frontends/mb86a20s.ko
+[    4.106789][    T1] LOAD OK   drivers/media/dvb-frontends/mn88443x.ko
+[    4.109715][    T1] LOAD OK   drivers/media/dvb-frontends/mn88472.ko
+[    4.113045][    T1] LOAD OK   drivers/media/dvb-frontends/mn88473.ko
+[    4.117163][    T1] LOAD OK   drivers/media/dvb-frontends/mt312.ko
+[    4.120071][    T1] LOAD OK   drivers/media/dvb-frontends/mt352.ko
+[    4.123441][    T1] LOAD OK   drivers/media/dvb-frontends/mxl5xx.ko
+[    4.126554][    T1] LOAD OK   drivers/media/dvb-frontends/mxl692.ko
+[    4.129281][    T1] LOAD OK   drivers/media/dvb-frontends/nxt200x.ko
+[    4.132784][    T1] LOAD OK   drivers/media/dvb-frontends/nxt6000.ko
+[    4.135364][    T1] LOAD OK   drivers/media/dvb-frontends/or51132.ko
+[    4.138527][    T1] LOAD OK   drivers/media/dvb-frontends/or51211.ko
+[    4.141997][    T1] LOAD OK   drivers/media/dvb-frontends/s5h1409.ko
+[    4.144816][    T1] LOAD OK   drivers/media/dvb-frontends/s5h1411.ko
+[    4.148161][    T1] LOAD OK   drivers/media/dvb-frontends/s5h1420.ko
+[    4.150866][    T1] LOAD OK   drivers/media/dvb-frontends/s5h1432.ko
+[    4.153510][    T1] LOAD OK   drivers/media/dvb-frontends/s921.ko
+[    4.156742][    T1] LOAD OK   drivers/media/dvb-frontends/si2165.ko
+[    4.159313][    T1] LOAD OK   drivers/media/dvb-frontends/si21xx.ko
+[    4.162440][    T1] LOAD OK   drivers/media/dvb-frontends/sp2.ko
+[    4.167209][    T1] LOAD OK   drivers/media/dvb-frontends/sp887x.ko
+[    4.170992][    T1] LOAD OK   drivers/media/dvb-frontends/stb0899.ko
+[    4.173577][    T1] LOAD OK   drivers/media/dvb-frontends/stb6000.ko
+[    4.177652][    T1] LOAD OK   drivers/media/dvb-frontends/stb6100.ko
+[    4.180454][    T1] LOAD OK   drivers/media/dvb-frontends/stv0288.ko
+[    4.184167][    T1] LOAD OK   drivers/media/dvb-frontends/stv0297.ko
+[    4.186931][    T1] LOAD OK   drivers/media/dvb-frontends/stv0299.ko
+[    4.191613][    T1] LOAD OK   drivers/media/dvb-frontends/stv0367.ko
+[    4.195638][    T1] LOAD OK   drivers/media/dvb-frontends/stv0900.ko
+[    4.200122][    T1] LOAD OK   drivers/media/dvb-frontends/stv090x.ko
+[    4.202951][    T1] LOAD OK   drivers/media/dvb-frontends/stv0910.ko
+[    4.207241][    T1] LOAD OK   drivers/media/dvb-frontends/stv6110.ko
+[    4.210193][    T1] LOAD OK   drivers/media/dvb-frontends/stv6110x.ko
+[    4.213254][    T1] LOAD OK   drivers/media/dvb-frontends/stv6111.ko
+[    4.216175][    T1] LOAD OK   drivers/media/dvb-frontends/tc90522.ko
+[    4.219544][    T1] LOAD OK   drivers/media/dvb-frontends/tda10021.ko
+[    4.223018][    T1] LOAD OK   drivers/media/dvb-frontends/tda10023.ko
+[    4.226937][    T1] LOAD OK   drivers/media/dvb-frontends/tda10048.ko
+[    4.230865][    T1] LOAD OK   drivers/media/dvb-frontends/tda1004x.ko
+[    4.233758][    T1] LOAD OK   drivers/media/dvb-frontends/tda10071.ko
+[    4.237646][    T1] LOAD OK   drivers/media/dvb-frontends/tda10086.ko
+[    4.240690][    T1] LOAD OK   drivers/media/dvb-frontends/tda18271c2dd.ko
+[    4.243334][    T1] LOAD OK   drivers/media/dvb-frontends/tda665x.ko
+[    4.246055][    T1] LOAD OK   drivers/media/dvb-frontends/tda8083.ko
+[    4.248931][    T1] LOAD OK   drivers/media/dvb-frontends/tda8261.ko
+[    4.252181][    T1] LOAD OK   drivers/media/dvb-frontends/tda826x.ko
+[    4.255338][    T1] LOAD OK   drivers/media/dvb-frontends/ts2020.ko
+[    4.258726][    T1] LOAD OK   drivers/media/dvb-frontends/tua6100.ko
+[    4.261403][    T1] LOAD OK   drivers/media/dvb-frontends/ves1820.ko
+[    4.265732][    T1] LOAD OK   drivers/media/dvb-frontends/ves1x93.ko
+[    4.269011][    T1] LOAD OK   drivers/media/dvb-frontends/zd1301_demod.ko
+[    4.272545][    T1] LOAD OK   drivers/media/dvb-frontends/zl10036.ko
+[    4.275217][    T1] LOAD OK   drivers/media/dvb-frontends/zl10039.ko
+[    4.277867][    T1] LOAD OK   drivers/media/dvb-frontends/zl10353.ko
+[    4.281015][    T1] LOAD OK   drivers/media/spi/cxd2880-spi.ko
+[    4.284823][    T1] LOAD OK   drivers/media/tuners/e4000.ko
+[    4.287517][    T1] LOAD OK   drivers/media/tuners/fc0011.ko
+[    4.290448][    T1] LOAD OK   drivers/media/tuners/fc0012.ko
+[    4.293090][    T1] LOAD OK   drivers/media/tuners/fc0013.ko
+[    4.296607][    T1] LOAD OK   drivers/media/tuners/fc2580.ko
+[    4.299555][    T1] LOAD OK   drivers/media/tuners/it913x.ko
+[    4.302443][    T1] LOAD OK   drivers/media/tuners/m88rs6000t.ko
+[    4.305688][    T1] LOAD OK   drivers/media/tuners/max2165.ko
+[    4.308524][    T1] LOAD OK   drivers/media/tuners/mc44s803.ko
+[    4.311610][    T1] LOAD OK   drivers/media/tuners/msi001.ko
+[    4.315429][    T1] LOAD OK   drivers/media/tuners/mt2060.ko
+[    4.318403][    T1] LOAD OK   drivers/media/tuners/mt2063.ko
+[    4.321357][    T1] LOAD OK   drivers/media/tuners/mt20xx.ko
+[    4.324185][    T1] LOAD OK   drivers/media/tuners/mt2131.ko
+[    4.326960][    T1] LOAD OK   drivers/media/tuners/mt2266.ko
+[    4.330828][    T1] LOAD OK   drivers/media/tuners/mxl301rf.ko
+[    4.335171][    T1] LOAD OK   drivers/media/tuners/mxl5005s.ko
+[    4.338945][    T1] LOAD OK   drivers/media/tuners/mxl5007t.ko
+[    4.341969][    T1] LOAD OK   drivers/media/tuners/qm1d1b0004.ko
+[    4.344950][    T1] LOAD OK   drivers/media/tuners/qm1d1c0042.ko
+[    4.348668][    T1] LOAD OK   drivers/media/tuners/qt1010.ko
+[    4.351489][    T1] LOAD OK   drivers/media/tuners/r820t.ko
+[    4.354740][    T1] LOAD OK   drivers/media/tuners/si2157.ko
+[    4.358447][    T1] LOAD OK   drivers/media/tuners/tda18212.ko
+[    4.361520][    T1] LOAD OK   drivers/media/tuners/tda18218.ko
+[    4.364635][    T1] LOAD OK   drivers/media/tuners/tda18250.ko
+[    4.370024][    T1] LOAD OK   drivers/media/tuners/tda18271.ko
+[    4.373244][    T1] LOAD OK   drivers/media/tuners/tda827x.ko
+[    4.377326][    T1] LOAD OK   drivers/media/tuners/tda8290.ko
+[    4.380348][    T1] LOAD OK   drivers/media/tuners/tda9887.ko
+[    4.385374][    T1] LOAD OK   drivers/media/tuners/tea5761.ko
+[    4.398044][    T1] LOAD OK   drivers/media/tuners/tea5767.ko
+[    4.408159][    T1] LOAD OK   drivers/media/tuners/tua9001.ko
+[    4.411291][    T1] tuner_simple: Unknown symbol tuners (err -2)
+[    4.413046][    T1] tuner_simple: Unknown symbol tuner_count (err -2)
+[    4.544383][    T1] LOAD OK   drivers/media/tuners/tuner-types.ko
+[    4.552973][    T1] LOAD OK   drivers/media/tuners/xc2028.ko
+[    4.559028][    T1] LOAD OK   drivers/media/tuners/xc4000.ko
+[    4.563562][    T1] LOAD OK   drivers/media/tuners/xc5000.ko
+[    4.566559][    T1] LOAD OK   drivers/misc/trusty-tui.ko
+[    4.570543][    T1] LOAD OK   drivers/net/phy/ax88796b.ko
+[    4.576895][    T1] LOAD OK   drivers/net/phy/phylink.ko
+[    4.581507][    T1] usbcore: registered new interface driver asix
+[    4.582672][    T1] LOAD OK   drivers/net/usb/asix.ko
+[    4.587467][    T1] usbcore: registered new interface driver ax88179_178a
+[    4.588509][    T1] LOAD OK   drivers/net/usb/ax88179_178a.ko
+[    4.591516][    T1] LOAD OK   drivers/nvmem/nvmem-sc27xx-efuse.ko
+[    4.594643][    T1] LOAD OK   drivers/nvmem/nvmem_sprd_efuse.ko
+[    4.598412][    T1] LOAD OK   drivers/phy/sprd/phy-sprd-ums512.ko
+[    4.603052][    T1] LOAD OK   drivers/power/supply/charger-manager.ko
+[    4.606632][    T1] LOAD OK   drivers/power/supply/sprd/sprd_battery_info.ko
+[    4.609951][    T1] LOAD OK   drivers/regulator/sc2730-regulator.ko
+[    4.612596][    T1] LOAD OK   drivers/rtc/rtc-sc27xx.ko
+[    4.615463][    T1] LOAD OK   drivers/spi/spi-sprd.ko
+[    4.619821][    T1] LOAD OK   drivers/sprd/flash/sprd_flash_drv.ko
+[    4.623017][    T1] LOAD OK   drivers/thermal/sprd/sc27xx_tsensor_thermal.ko
+[    4.627506][    T1] sprd_cpu_cooling: unable to find thermal zones
+[    4.628501][    T1] LOAD OK   drivers/thermal/sprd/sprd_cpu_cooling.ko
+[    4.631313][    T1] LOAD OK   drivers/thermal/sprd/sprd_soc_thm.ko
+[    4.632845][    T1] sprd_shm: Unknown symbol trusty_std_call32 (err -2)
+[    4.756017][    T1] LOAD OK   drivers/trusty/trusty-ipc.ko
+[    4.757532][    T1] trusty_irq: Unknown symbol trusty_call_notifier_register (err -2)
+[    4.758751][    T1] trusty_irq: Unknown symbol trusty_fast_call32 (err -2)
+[    4.759608][    T1] trusty_irq: Unknown symbol trusty_enqueue_nop (err -2)
+[    4.760550][    T1] trusty_irq: Unknown symbol trusty_call_notifier_unregister (err -2)
+[    4.880770][    T1] trusty_log: Unknown symbol trusty_call_notifier_register (err -2)
+[    4.882308][    T1] trusty_log: Unknown symbol trusty_version_str_get (err -2)
+[    4.883594][    T1] trusty_log: Unknown symbol trusty_std_call32 (err -2)
+[    4.884804][    T1] trusty_log: Unknown symbol trusty_call_notifier_unregister (err -2)
+[    4.976656][    T1] trusty_pm: Unknown symbol trusty_fast_call32 (err -2)
+[    5.077387][    T1] trusty_virtio: Unknown symbol trusty_call_notifier_register (err -2)
+[    5.079616][    T1] trusty_virtio: Unknown symbol trusty_enqueue_nop (err -2)
+[    5.081564][    T1] trusty_virtio: Unknown symbol trusty_get_api_version (err -2)
+[    5.083672][    T1] trusty_virtio: Unknown symbol trusty_dequeue_nop (err -2)
+[    5.085520][    T1] trusty_virtio: Unknown symbol trusty_call32_mem_buf (err -2)
+[    5.087540][    T1] trusty_virtio: Unknown symbol trusty_std_call32 (err -2)
+[    5.089349][    T1] trusty_virtio: Unknown symbol trusty_call_notifier_unregister (err -2)
+[    5.186827][    T1] LOAD OK   drivers/trusty/trusty.ko
+[    5.189763][    T1] mipi_driver: Unknown symbol serdes_enable (err -2)
+[    5.191934][    T1] mipi_driver: Unknown symbol dbg_log_device_register (err -2)
+[    5.302705][    T1] LOAD OK   drivers/unisoc_platform/debug_log/sprd_mipi.ko
+[    5.309919][    T1] LOAD OK   drivers/usb/gadget/function/usb_f_vser.ko
+[    5.316740][    T1] LOAD OK   drivers/usb/typec/sprd/sc27xx_typec.ko
+[    5.321484][    T1] LOAD OK   drivers/video/backlight/pwm_bl.ko
+[    5.323339][    T1] agdsp_access: Unknown symbol aud_smsg_ch_close (err -2)
+[    5.324468][    T1] agdsp_access: Unknown symbol aud_smsg_send (err -2)
+[    5.326005][    T1] agdsp_access: Unknown symbol aud_smsg_ch_open (err -2)
+[    5.326994][    T1] agdsp_access: Unknown symbol aud_smsg_recv (err -2)
+[    5.445113][    T1] LOAD OK   drivers/vxtux/audio/audio_pipe/sprd_apipe.ko
+[    5.446984][    T1] sprd_audcp_boot: Unknown symbol aud_get_aud_ipc_smsg_para_addr (err -2)
+[    5.448300][    T1] sprd_audcp_boot: Unknown symbol aud_get_aud_ipc_smsg_addr (err -2)
+[    5.542067][    T1] audio_dsp_dump: Unknown symbol aud_ipc_dump (err -2)
+[    5.543941][    T1] audio_dsp_dump: Unknown symbol aud_ipc_ch_open (err -2)
+[    5.545540][    T1] audio_dsp_dump: Unknown symbol aud_smsg_register_dump_func (err -2)
+[    5.547385][    T1] audio_dsp_dump: Unknown symbol aud_smsg_ch_close (err -2)
+[    5.548891][    T1] audio_dsp_dump: Unknown symbol agdsp_can_access (err -2)
+[    5.550429][    T1] audio_dsp_dump: Unknown symbol aud_send_cmd_no_param (err -2)
+[    5.551955][    T1] audio_dsp_dump: Unknown symbol aud_ipc_ch_close (err -2)
+[    5.553443][    T1] audio_dsp_dump: Unknown symbol aud_smsg_ch_open (err -2)
+[    5.555002][    T1] audio_dsp_dump: Unknown symbol aud_send_cmd_no_wait (err -2)
+[    5.556537][    T1] audio_dsp_dump: Unknown symbol aud_smsg_recv (err -2)
+[    5.649778][    T1] sprd_audcp_dvfs: Unknown symbol aud_send_cmd_result (err -2)
+[    5.651845][    T1] sprd_audcp_dvfs: Unknown symbol aud_ipc_ch_open (err -2)
+[    5.653518][    T1] sprd_audcp_dvfs: Unknown symbol aud_ipc_ch_close (err -2)
+[    5.745610][    T1] audio_pipe: Unknown symbol aud_send_cmd (err -2)
+[    5.748143][    T1] audio_pipe: Unknown symbol aud_ipc_ch_open (err -2)
+[    5.750562][    T1] audio_pipe: Unknown symbol aud_smsg_wakeup_ch (err -2)
+[    5.752939][    T1] audio_pipe: Unknown symbol aud_ipc_ch_close (err -2)
+[    5.755206][    T1] audio_pipe: Unknown symbol aud_send_cmd_no_wait (err -2)
+[    5.757456][    T1] audio_pipe: Unknown symbol aud_smsg_recv (err -2)
+[    5.858132][    T1] LOAD OK   drivers/vxtux/audio/audiosipc/audio_sipc.ko
+[    5.867365][    T1] LOAD OK   drivers/vxtux/audio/saudio/saudio.ko
+[    5.873579][    T1] LOAD OK   drivers/vxtux/audio/voice_trigger/voice_trigger_node.ko
+[    5.881603][    T1] LOAD OK   drivers/vxtux/net/wireless/sprdwcn/bluetooth/driver/sprdbt_tty.ko
+[    5.887972][    T1] fm get hw type:3
+[    5.888675][    T1] fm: probe success: 0
+[    5.889487][    T1] LOAD OK   drivers/vxtux/net/wireless/sprdwcn/fm/driver/sprd_fm.ko
+[    5.900730][    T1] LOAD OK   drivers/vxtux/npu/vdsp/sprd_vdsp.ko
+[    5.905095][    T1] LOAD OK   drivers/vxtux/sipc/slog_bridge.ko
+[    5.908256][    T1] LOAD OK   drivers/vxtux/sipc/sprd-sipc-virt-bus.ko
+[    5.912474][    T1] sprd autotest core driver registered
+[    5.913288][    T1] LOAD OK   drivers/vxtux/soc/autotest/sprd_autotest_core.ko
+[    5.917078][    T1] LOAD OK   drivers/vxtux/soc/autotest/sprd_autotest_gpio.ko
+[    5.920438][    T1] LOAD OK   drivers/vxtux/soc/cache_efuse/nvmem_sprd_cache_efuse.ko
+[    5.922071][    T1] sprd_debugstat: Unknown symbol sprd_sip_svc_get_handle (err -2)
+[    6.047565][    T1] LOAD OK   drivers/vxtux/soc/iq/sprd_iq.ko
+[    6.050609][    T1] ------------[ cut here ]------------
+[    6.051408][    T1] WARNING: CPU: 3 PID: 1 at fs/sysfs/group.c:131 internal_create_group+0x464/0x53c
+[    6.052687][    T1] Modules linked in: sprd_manufacturer_model(E+) sprd_iq(E) nvmem_sprd_cache_efuse(E) sprd_autotest_gpio(E) sprd_autotest_core(E) sprd_sipc_virt_bus(E) slog_bridge(E) sprd_vdsp(E) sprd_fm(E) sprdbt_tty(E) voice_trigger_node(E) saudio(E) audio_sipc(E) sprd_apipe(E) pwm_bl(E) sc27xx_typec(E) usb_f_vser(E) sprd_mipi(E) trusty(E) trusty_ipc(E) sprd_soc_thm(E) sprd_cpu_cooling(E) sc27xx_tsensor_thermal(E) sprd_flash_drv(E) spi_sprd(E) rtc_sc27xx(E) sc2730_regulator(E) sprd_battery_info(E) charger_manager(E) phy_sprd_ums512(E) nvmem_sprd_efuse(E) nvmem_sc27xx_efuse(E) ax88179_178a(E) asix(E) phylink(E) ax88796b(E) trusty_tui(E) xc5000(E) xc4000(E) xc2028(E) tuner_types(E) tua9001(E) tea5767(E) tea5761(E) tda9887(E) tda8290(E) tda827x(E) tda18271(E) tda18250(E) tda18218(E) tda18212(E) si2157(E) r820t(E) qt1010(E) qm1d1c0042(E) qm1d1b0004(E) mxl5007t(E) mxl5005s(E) mxl301rf(E) mt2266(E) mt2131(E) mt20xx(E) mt2063(E) mt2060(E) msi001(E) mc44s803(E) max2165(E) m88rs6000t(E) it913x(E) fc2580(E) fc0013(E) fc0012(E)
+[    6.052874][    T1]  fc0011(E) e4000(E) cxd2880_spi(E) zl10353(E) zl10039(E) zl10036(E) zd1301_demod(E) ves1x93(E) ves1820(E) tua6100(E) ts2020(E) tda826x(E) tda8261(E) tda8083(E) tda665x(E) tda18271c2dd(E) tda10086(E) tda10071(E) tda1004x(E) tda10048(E) tda10023(E) tda10021(E) tc90522(E) stv6111(E) stv6110x(E) stv6110(E) stv0910(E) stv090x(E) stv0900(E) stv0367(E) stv0299(E) stv0297(E) stv0288(E) stb6100(E) stb6000(E) stb0899(E) sp887x(E) sp2(E) si21xx(E) si2165(E) s921(E) s5h1432(E) s5h1420(E) s5h1411(E) s5h1409(E) or51211(E) or51132(E) nxt6000(E) nxt200x(E) mxl692(E) mxl5xx(E) mt352(E) mt312(E) mn88473(E) mn88472(E) mn88443x(E) mb86a20s(E) mb86a16(E) m88rs2000(E) lnbp22(E) lnbp21(E) lnbh29(E) lnbh25(E) lgs8gxx(E) lgs8gl5(E) lgdt330x(E) lgdt3305(E) lg2160(E) l64781(E) ix2505v(E) itd1000(E) isl6423(E) isl6421(E) isl6405(E) horus3a(E) helene(E) ec100(E) dvb_pll(E) ds3000(E) drxk(E) drxd(E) drx39xyj(E) dibx000_common(E) dib3000mb(E) dib0090(E) dib0070(E) cxd2880(E) cxd2841er(E) cxd2820r(E) cxd2099(E) cx24123(E) cx24120(E)
+[    6.066446][    T1]  cx24117(E) cx24116(E) cx24113(E) cx24110(E) cx22702(E) cx22700(E) bcm3510(E) au8522_dig(E) au8522_decoder(E) au8522_common(E) atbm8830(E) ascot2e(E) af9033(E) a8293(E) unisoc_mailbox(E) novatek_ts_spi(E) sensorhub(E) sc27xx_adc(E) gpio_pmic_eic_sprd(E) extcon_usb_gpio(E) sprd_top_dvfs(E) mmdvfs(E) apsys_dvfs(E) virtio_crypto(E) sprd_cpufreq_public(E) sprd_systimer(E) ums512_clk(E) sc9863a_clk(E) sc9860_clk(E) clk_sprd(E) lzo(E) lzo_rle(E) crypto_engine(E) aes_neon_blk(E) aes_ce_ccm(E)
+[    6.082205][    T1] CPU: 3 UID: 0 PID: 1 Comm: init Tainted: G        W   E       6.18.52-VXTux-UMS512-artix #2 PREEMPT 
+[    6.083490][    T1] Tainted: [W]=WARN, [E]=UNSIGNED_MODULE
+[    6.084148][    T1] Hardware name: linux,dummy-virt (DT)
+[    6.084794][    T1] pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    6.085700][    T1] pc : internal_create_group+0x464/0x53c
+[    6.086360][    T1] lr : sysfs_create_group+0x18/0x24
+[    6.086973][    T1] sp : ffffffc08765b960
+[    6.087456][    T1] x29: ffffffc08765b980 x28: 0000000000000000 x27: ffffffc07fdf30d8
+[    6.088388][    T1] x26: 0000000000000000 x25: ffffffc08765bc40 x24: 0000000000000000
+[    6.089327][    T1] x23: ffffffc084e45000 x22: ffffffc084e44f48 x21: 0000000000000000
+[    6.090255][    T1] x20: ffffff80ff607cf8 x19: ffffffc07fdf3610 x18: 0000000000000014
+[    6.091175][    T1] x17: 000000004fb09428 x16: 00000000dcbe04e1 x15: ffffffc081e62b20
+[    6.092099][    T1] x14: 0000000000000003 x13: ffffffc07ab74000 x12: 0000000000000100
+[    6.093041][    T1] x11: 00000000000000c0 x10: fffffffffdf815b8 x9 : 0000000000000003
+[    6.093976][    T1] x8 : ffffffc07fdf3860 x7 : 0000000000000000 x6 : 0000000000000000
+[    6.094899][    T1] x5 : 0000000000000000 x4 : 0000000000000000 x3 : ffffff80803e8000
+[    6.095823][    T1] x2 : ffffffc07fdf50f0 x1 : 0000000000000000 x0 : 0000000000000000
+[    6.096761][    T1] Call trace:
+[    6.097144][    T1]  internal_create_group+0x464/0x53c (P)
+[    6.097801][    T1]  sysfs_create_group+0x18/0x24
+[    6.098364][    T1]  sprd_manufacturer_model_init+0x84/0x1000 [sprd_manufacturer_model]
+[    6.099329][    T1]  do_one_initcall+0x84/0x380
+[    6.099873][    T1]  do_init_module+0x58/0x248
+[    6.100410][    T1]  load_module+0x2200/0x233c
+[    6.100949][    T1]  init_module_from_file+0x88/0xcc
+[    6.101535][    T1]  idempotent_init_module+0x190/0x288
+[    6.102153][    T1]  __arm64_sys_finit_module+0x6c/0xd8
+[    6.102769][    T1]  invoke_syscall+0x48/0x10c
+[    6.103302][    T1]  el0_svc_common.constprop.0+0x40/0xe8
+[    6.103939][    T1]  do_el0_svc+0x20/0x2c
+[    6.104416][    T1]  el0_svc+0x50/0x2e4
+[    6.104892][    T1]  el0t_64_sync_handler+0xa0/0xe4
+[    6.105469][    T1]  el0t_64_sync+0x19c/0x1a0
+[    6.105990][    T1] irq event stamp: 145581
+[    6.106487][    T1] hardirqs last  enabled at (145581): [<ffffffc081480b8c>] _raw_spin_unlock_irqrestore+0x68/0xa0
+[    6.107685][    T1] hardirqs last disabled at (145580): [<ffffffc081480830>] _raw_spin_lock_irqsave+0x7c/0x80
+[    6.108848][    T1] softirqs last  enabled at (144272): [<ffffffc080069078>] handle_softirqs+0x5f0/0x634
+[    6.109956][    T1] softirqs last disabled at (144267): [<ffffffc080010308>] __do_softirq+0x14/0x20
+[    6.111009][    T1] ---[ end trace 0000000000000000 ]---
+[    6.111767][    T1] Init manufacturer_model mudule failed
+[    6.111932][    T1] LOAD OK   drivers/vxtux/soc/manufacturer_model/sprd_manufacturer_model.ko
+[    6.114362][    T1] sprd_pdbg: Unknown symbol sprd_sip_svc_get_handle (err -2)
+[    6.239144][    T1] LOAD OK   drivers/vxtux/soc/power_manager/sprd_power_manager.ko
+[    6.243531][    T1] sprd_sip_svc: monitor handle not reported
+[    6.244399][    T1] sprd_sip_svc: PERF service not present in firmware
+[    6.245306][    T1] sprd_sip_svc: STORAGE service not present in firmware
+[    6.246266][    T1] sprd_sip_svc: PWR service not present in firmware
+[    6.247135][    T1] sprd_sip_svc: DVFS service not present in firmware
+[    6.248014][    T1] sprd_sip_svc: NPU service not present in firmware
+[    6.248895][    T1] sprd_sip_svc: DBG service not present in firmware
+[    6.249932][    T1] LOAD OK   drivers/vxtux/soc/sip_svc/sprd_sip_svc.ko
+[    6.253317][    T1] LOAD OK   drivers/vxtux/soc/sprd_7sreset/sprd_7sreset.ko
+[    6.257719][    T1] LOAD OK   drivers/vxtux/soc/time_sync/sprd_time_sync.ko
+[    6.260662][    T1] LOAD OK   drivers/vxtux/soc/time_sync/sprd_time_sync_cp.ko
+[    6.263788][    T1] snd_soc_sprd_vbc_v4: Unknown symbol force_on_xtl (err -2)
+[    6.264761][    T1] snd_soc_sprd_vbc_v4: Unknown symbol disable_access_force (err -2)
+[    6.265779][    T1] snd_soc_sprd_vbc_v4: Unknown symbol restore_access (err -2)
+[    6.266762][    T1] snd_soc_sprd_vbc_v4: Unknown symbol agdsp_access_disable (err -2)
+[    6.267701][    T1] snd_soc_sprd_vbc_v4: Unknown symbol agdsp_access_enable (err -2)
+[    6.402375][    T1] LOAD OK   drivers/vxtux/sound/asoc/platform/sprd-compr-2stage-dma.ko
+[    6.407841][    T1] LOAD OK   drivers/vxtux/sound/asoc/platform/sprd-dmaengine-pcm.ko
+[    6.411322][    T1] LOAD OK   drivers/watchdog/sprd_pmic_wdt.ko
+[    6.416885][    T1] LOAD OK   fs/efivarfs/efivarfs.ko
+[    6.417568][    T1] SKIP (butuh modem/CP via SIPC) net/ims_bridge/ims_bridge.ko
+[    6.418471][    T1] SKIP (butuh modem/CP via SIPC) net/ims_bridge/ims_bridge_t.ko
+[    6.422033][    T1] LOAD OK   drivers/cpufreq/sprd-cpufreq-v2.ko
+[    6.425564][    T1] LOAD OK   drivers/media/dvb-frontends/dib3000mc.ko
+[    6.429065][    T1] LOAD OK   drivers/media/dvb-frontends/dib7000m.ko
+[    6.434131][    T1] LOAD OK   drivers/media/dvb-frontends/dib7000p.ko
+[    6.439046][    T1] LOAD OK   drivers/media/dvb-frontends/dib8000.ko
+[    6.443810][    T1] LOAD OK   drivers/media/dvb-frontends/dib9000.ko
+[    6.447510][    T1] LOAD OK   drivers/media/tuners/tuner-simple.ko
+[    6.451900][    T1] LOAD OK   drivers/trusty/sprd_shm.ko
+[    6.455806][    T1] LOAD OK   drivers/trusty/trusty-irq.ko
+[    6.459791][    T1] LOAD OK   drivers/trusty/trusty-log.ko
+[    6.462806][    T1] sprd-trusty-pm: Trusty fastcall SMC_FC_SYNC_TIMER_CNT failed(-1)
+[    6.463846][    T1] LOAD OK   drivers/trusty/trusty-pm.ko
+[    6.468143][    T1] LOAD OK   drivers/trusty/trusty-virtio.ko
+[    6.472394][    T1] LOAD OK   drivers/unisoc_platform/debug_log/sharkl5/mipi_driver.ko
+[    6.477312][    T1] LOAD OK   drivers/vxtux/audio/agdsp_access/agdsp_access.ko
+[    6.481076][    T1] LOAD OK   drivers/vxtux/audio/audiocpboot/sprd_audcp_boot.ko
+[    6.486978][    T1] LOAD OK   drivers/vxtux/audio/audiodspdump/audio-dsp-dump.ko
+[    6.491537][    T1] LOAD OK   drivers/vxtux/audio/audiodvfs/sprd_audcp_dvfs.ko
+[    6.495303][    T1] LOAD OK   drivers/vxtux/audio/audiosipc/audio-pipe.ko
+[    6.498633][    T1] LOAD OK   drivers/vxtux/soc/debugstat/sprd_debugstat.ko
+[    6.503231][    T1] LOAD OK   drivers/vxtux/soc/pdbg/sprd_pdbg.ko
+[    6.510628][    T1] LOAD OK   drivers/vxtux/sound/asoc/dai_v4/snd-soc-sprd-vbc-v4.ko
+[    6.511634][    T1] === SUMMARY: total=232 loaded=229 skipped=3 failed=0 ===
+[    6.512455][    T1] === VXTUX-MODTEST-PASS ===
+[    6.513004][    T1] === VXTUX-MODTEST-DONE ===
+[    6.514920][   T55] cfg80211: failed to load regulatory.db
+[    6.533518][    T1] reboot: Power down
+  Info: KVM session ended normally.
