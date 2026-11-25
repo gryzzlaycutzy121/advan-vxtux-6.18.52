@@ -5,6 +5,18 @@
 # drivers/tee). Akibatnya simbol ini mustahil hidup dan baris =y di defconfig
 # dibuang olddefconfig tanpa pesan. Bila trusty-ipc masuk ke pohon, dep itu
 # harus dikembalikan; disp_ca.c sendiri sudah fail-gracefully tanpa TEE.
+config VXTUX_TRUSTY_VDEV_STUB
+	tristate "VXTux: stub Trusty virtio-IPC device (test harness)"
+	depends on VXTUX_DRIVERS && VIRTIO
+	default n
+	help
+	  Test harness only. Registers a virtio device with the Trusty IPC
+	  device id so drivers/trusty/trusty-ipc.ko can bind to it and
+	  drivers/dma-buf/sprd/ion_ipc_trusty.ko becomes loadable inside
+	  the LKVM/QEMU guest, which has no secure world.
+	  This is NOT a TEE: no service registry, no data path. Pair it
+	  with trusty-ipc.ko's test_autoonline=1 parameter.
+
 config VXTUX_TRUSTY_DISP
 	tristate "VXTux: Trusty display-CA helpers (RE)"
 	depends on VXTUX_DRIVERS

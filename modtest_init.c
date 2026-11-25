@@ -175,6 +175,31 @@ int main(void) {
 
             char path[384];
             snprintf(path, sizeof path, "/modules/%s", lines[i]);
+
+            /* VXTux test harness: before the stub Trusty virtio device is
+             * registered, force trusty-ipc.ko to auto-online so that
+             * ion_ipc_trusty.ko (tried in Phase B) can bind to it. The stub
+             * device registration triggers tipc_virtio_probe(), which is when
+             * the parameter must already be 1. */
+            if (strstr(lines[i], "trusty_vdev_stub")) {
+                if (is_already("trusty_ipc")) {
+                    int pfd = open("/sys/module/trusty_ipc/parameters/test_autoonline",
+                                   O_WRONLY);
+                    if (pfd >= 0) {
+                        if (write(pfd, "1\n", 2) < 0)
+                            serf("WARN: write test_autoonline errno=%d\n", errno);
+                        close(pfd);
+                        ser("set trusty_ipc test_autoonline=1 (stub harness)\n");
+                    } else {
+                        serf("WARN: no test_autoonline param (errno=%d)\n", errno);
+                    }
+                } else {
+                    /* trusty-ipc not loaded yet: defer to the next pass. */
+                    progress++;
+                    continue;
+                }
+            }
+
             int e = load_one(path);
             if (e == 0) {
                 state[i] = 1; loaded++; progress++;

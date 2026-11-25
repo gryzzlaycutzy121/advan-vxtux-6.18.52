@@ -1788,6 +1788,24 @@ static void _txvq_cb(struct virtqueue *txvq)
  * dropped as unreferenced. The strings are the same ones vq_info[]
  * points at.
  */
+/*
+ * VXTux test harness hook (default OFF, inert on real hardware).
+ *
+ * Normally the device only becomes usable when the secure world sends
+ * TIPC_CTRL_MSGTYPE_GO_ONLINE over the rx virtqueue. In the LKVM/QEMU
+ * module-load test there is no secure world, so that message can never
+ * arrive and _get_txbuf_locked() would keep returning -ENODEV.
+ *
+ * When test_autoonline=1 the tipc driver brings the device online
+ * itself. This only makes the guest-side code path (channel create +
+ * connect request queueing) runnable without a TEE; it is NOT a Trusty
+ * implementation.
+ */
+static bool tipc_test_autoonline;
+module_param_named(test_autoonline, tipc_test_autoonline, bool, 0644);
+MODULE_PARM_DESC(test_autoonline,
+		 "test harness: go online without a secure world (default off)");
+
 static int tipc_virtio_probe(struct virtio_device *vdev)
 {
 	int err, i;
@@ -1890,6 +1908,12 @@ static int tipc_virtio_probe(struct virtio_device *vdev)
 
 	vdev->priv = vds;
 	vds->state = VDS_OFFLINE;
+
+	if (tipc_test_autoonline) {
+		dev_info(&vdev->dev,
+			 "test_autoonline: bringing device online (no secure world)\n");
+		_go_online(vds);
+	}
 
 	dev_dbg(&vdev->dev, "%s: done\n", __func__);
 	return 0;
