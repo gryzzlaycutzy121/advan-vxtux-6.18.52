@@ -45,7 +45,29 @@ CMDLINE = (
     "rdinit=/vxtux/init "
     "loop.max_part=7 printk.devkmsg=on panic=15 "
     "initcall_debug=1 "
+    # softlockup_panic=1 (2026-11-16): DIPASANG KEMBALI dengan sengaja.
+    #
+    # Kenapa dulu dibuang: satu WARN di dalam probe -> panic -> bootloop.
+    # Itu tidak berlaku untuk parameter ini: softlockup hanya menyala bila
+    # satu CPU tidak pernah menjalankan scheduler selama 2 x watchdog_thresh
+    # (default 20 detik) - keadaan yang di perangkat ini berakhir dengan
+    # watchdog LK (androidboot.wdten=e551) mereset SoC sekitar detik 30.
+    #
+    # Kenapa sekarang perlu: pstore/ramoops (/reserved-memory/ramoops@fff80000,
+    # record 128 KiB + console 64 KiB + pmsg 32 KiB, CONFIG_PSTORE_CONSOLE=y,
+    # CONFIG_PSTORE_RAM=y) HANYA menulis saat oops/panic. Boot kita menggantung
+    # senyap tanpa panic, jadi ramoops selalu kosong dan "read_mem 0xfff80000"
+    # tidak pernah menghasilkan apa pun. Dengan softlockup_panic=1, hang 20
+    # detik berubah menjadi panic -> pstore menulis dmesg ke ramoops -> panic=15
+    # melakukan warm reset -> isi ramoops bisa dibaca dari mode download.
+    "softlockup_panic=1 "
     "vxtuxfb=0x9d000000,0x9e000000 "
+    # vxtux_logrec: region RAM 4 MiB untuk record tahan-reset; dipanen boot
+    # berikutnya lalu ditulis ke slot cache (lihat drivers/vxtux/debug/
+    # vxtux_logrec.c).  Tanpa parameter ini channel RAM mati dan hanya slot
+    # eMMC yang mencatat, jadi boot yang mati sebelum MMC tidak meninggalkan
+    # jejak apa pun.
+    "vxtuxlog=0xAFC00000 "
     "androidboot.console=ttyS1 "
     "androidboot.hardware=ums512_1h10 androidboot.slot_suffix=_a "
     "androidboot.serialno=0123456789ABCDEF androidboot.selinux=permissive"

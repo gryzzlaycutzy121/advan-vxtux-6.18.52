@@ -45,10 +45,17 @@
  * painted strip must be flushed to the point of coherency
  * (dcache_clean_poc) or the display controller never sees the pixels.
  *
- * COST
- * ----
- * One 16-px strip (3840 bytes) + one cache flush per line of text, a
- * full-screen memmove every 125 lines.  Negligible next to initcall_debug=1.
+ * COST / NO FLOOD (2026-11-16)
+ * ----------------------------
+ * Sebelumnya setiap initcall mencetak BARIS BARU, jadi setelah 125 baris
+ * penuh setiap initcall berikutnya men-trigger memmove 4,8 MB + flush
+ * seluruh layar: teks berlari ratusan kali per detik dan tidak terbaca
+ * ("banjir log").  Sekarang nama initcall yang sedang berjalan ditulis ke
+ * SATU baris tetap (IT_LIVE_ROW) dan ditimpa di tempat: layar diam, tidak
+ * ada scroll, tidak ada memmove layar penuh.  Saat boot membeku, baris itu
+ * tetap memuat initcall yang menggantung - informasinya sama, tanpa banjir.
+ *
+ * Biaya per initcall: satu strip 16-px (3840 byte) + satu cache flush.
  */
 #define pr_fmt(fmt) "vxtux-it: " fmt
 
@@ -67,6 +74,8 @@
 #define IT_STRIDE	(IT_WIDTH * 2U)	/* RGB565, 2 byte/piksel */
 #define IT_SIZE		((size_t)IT_STRIDE * IT_HEIGHT)
 #define IT_CACHELINE	64UL
+/* Baris tetap tempat initcall yang SEDANG berjalan ditulis (0 = banner). */
+#define IT_LIVE_ROW	1U
 
 static const struct font_desc *it_font;
 static void *it_fb;
@@ -156,6 +165,46 @@ static void it_puts(const char *s)
 }
 
 /*
+ * Tulis satu baris teks ke baris tetap `row`, menimpa isi sebelumnya:
+ * tanpa newline, tanpa scroll, tanpa memmove layar penuh.  Dipakai untuk
+ * menampilkan initcall yang sedang berjalan supaya layar tidak "banjir".
+ */
+static void it_live_line(const char *s)
+{
+	unsigned int fw = it_font->width;
+	unsigned int fh = it_font->height;
+	size_t off = (size_t)IT_LIVE_ROW * fh * IT_STRIDE;
+	unsigned int col = 0;
+
+	/* bersihkan baris ini saja (sisa nama yang lebih panjang) */
+	memset((char *)it_fb + off, 0, (size_t)fh * IT_STRIDE);
+
+	while (*s && col < it_cols) {
+		const unsigned char *g;
+		unsigned char c = (unsigned char)*s++;
+		unsigned int x, y;
+
+		if (c == ' ' || c == '\n' || c == '\r') {
+			col++;
+			continue;
+		}
+		if (c >= it_font->charcount)
+			c = '?';
+		g = (const unsigned char *)it_font->data + c * fh;
+		for (y = 0; y < fh; y++) {
+			u16 *px = (u16 *)((char *)it_fb + off +
+					  (size_t)y * IT_STRIDE) + col * fw;
+
+			for (x = 0; x < fw; x++)
+				if (g[y] & (0x80U >> x))
+					px[x] = 0xffff;
+		}
+		col++;
+	}
+	it_flush(off, (size_t)fh * IT_STRIDE);
+}
+
+/*
  * Banner: bersihkan seluruh panel lalu tulis baris pembuka.  Dipanggil
  * dari vxtux_beacon.c tepat setelah framebuffer di-reserve (waktu paling
  * awal yang memungkinkan), dan sebagai fallback dari hook initcall.
@@ -222,6 +271,11 @@ void vxtux_itrace_initcall(initcall_t fn)
 	if (!it_on)
 		return;
 
-	snprintf(buf, sizeof(buf), "%3u %ps\n", it_count++, fn);
-	it_puts(buf);
+	/*
+	 * Tanpa '\n': baris yang sama ditimpa terus, jadi yang terlihat saat
+	 * boot membeku adalah initcall yang sedang berjalan - persis yang
+	 * dicari - tanpa layar ikut scrolling.
+	 */
+	snprintf(buf, sizeof(buf), "it %5u  %ps", it_count++, fn);
+	it_live_line(buf);
 }
