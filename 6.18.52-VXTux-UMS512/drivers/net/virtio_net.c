@@ -6812,10 +6812,16 @@ static int virtnet_probe(struct virtio_device *vdev)
 
 	/* Do we support "hardware" checksums? */
 	if (virtio_has_feature(vdev, VIRTIO_NET_F_CSUM)) {
-		/* This opens up the world of extra features. */
-		dev->hw_features |= NETIF_F_HW_CSUM | NETIF_F_SG;
+		/* VXTux Path A: the kvmtool tap + VIRTIO_NET_F_CSUM TX-checksum
+		 * offload corrupts the payload bytes (the server ACKs the
+		 * request but drops it) => disable the HW_CSUM offload and keep
+		 * only SG, so Linux computes the TCP checksum in software.
+		 * ICMP/DNS/TCP-connect were fine; TCP data is the case fixed.
+		 * Restore NETIF_F_HW_CSUM once the virtio-net offload is fixed.
+		 */
+		dev->hw_features |= NETIF_F_SG;
 		if (csum)
-			dev->features |= NETIF_F_HW_CSUM | NETIF_F_SG;
+			dev->features |= NETIF_F_SG;
 
 		if (virtio_has_feature(vdev, VIRTIO_NET_F_GSO)) {
 			dev->hw_features |= NETIF_F_TSO

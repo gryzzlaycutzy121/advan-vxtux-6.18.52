@@ -339,30 +339,36 @@ static int wait_for_storage(struct part *parts, int max, int timeout_s)
 	int waited = 0, np = 0;
 
 	for (;;) {
-		int i, mmc = 0;
+		int i, mmc = 0, vd = 0;
 
 		np = list_partitions(parts, max);
 		if (np < 0)
 			np = 0;
-		for (i = 0; i < np; i++)
+		for (i = 0; i < np; i++) {
 			if (!strncmp(parts[i].name, "mmcblk", 6))
 				mmc++;
-		if (mmc) {
+			else if (!strncmp(parts[i].name, "vd", 2))
+				vd++;
+		}
+		/* Guest (lkvm/KVM) has virtio-blk but never an eMMC; treat a
+		 * virtio disk as "storage ready" so the 180s eMMC wait is
+		 * skipped and the rootfs is mounted from /dev/vda right away. */
+		if (mmc || vd) {
 			both_fmt("VXTUX-STEP: storage ready after %ds: "
-				 "%d mmc partitions (of %d visible)\n",
-				 waited, mmc, np);
+				 "%d mmc + %d virtio-blk partitions (of %d visible)\n",
+				 waited, mmc, vd, np);
 			return np;
 		}
 		if (waited >= timeout_s) {
-			both_fmt("VXTUX-STEP: eMMC ABSENT after %ds "
-				 "(%d partitions, none mmc)\n",
+			both_fmt("VXTUX-STEP: storage ABSENT after %ds "
+				 "(%d partitions, none mmc, none virtio-blk)\n",
 				 waited, np);
 			dmesg_hints(20);
 			return np;
 		}
 		if (waited % 10 == 0) {
-			both_fmt("VXTUX-STEP: waiting for eMMC (%ds, %d "
-				 "partitions, none mmc yet)\n",
+			both_fmt("VXTUX-STEP: waiting for storage (%ds, %d "
+				 "partitions, none mmc/vd yet)\n",
 				 waited, np);
 			dmesg_hints(6);
 		}
@@ -1307,8 +1313,13 @@ static int find_and_mount_root(const struct part *parts, int np, char *rootdev,
 		char dev[96], partname[96] = "", initpath[96] = "";
 		int probe, named;
 
-		if (!strstr(parts[i].name, "mmcblk") ||
-		    !strchr(parts[i].name, 'p'))
+		/* Native boot on the tablet: mmcblk*p* (eMMC partitions).
+		 * Guest boot (lkvm/KVM): virtio-blk exposes the whole rootfs
+		 * disk as /dev/vda -- no partitions, no 'p' in the name. */
+		int is_mmc = strstr(parts[i].name, "mmcblk") != NULL &&
+			     strchr(parts[i].name, 'p') != NULL;
+		int is_vd = strncmp(parts[i].name, "vd", 2) == 0;
+		if (!is_mmc && !is_vd)
 			continue;
 		named = get_partname(parts[i].name, partname, sizeof partname);
 		/* GPT says super: inspect it regardless of reported size. Without
@@ -1367,6 +1378,30 @@ static void switch_root_and_exec(void)
 	mount(NULL, "/newroot/dev", NULL, MS_MOVE, NULL);
 	mount(NULL, "/newroot/proc", NULL, MS_MOVE, NULL);
 	mount(NULL, "/newroot/sys", NULL, MS_MOVE, NULL);
+
+	/* A bare ext4 rootfs image (summed from a userspace tarball) has no
+	 * /dev and no /run; /var/run is a dangling symlink to ../run.  dinit
+	 * then dies as PID 1 ("Attempted to kill init", exit 0x100) before it
+	 * can start a single service.  Give the new root the mounts its init
+	 * expects: devtmpfs (+pts, +shm) over /dev and a tmpfs on /run.
+	 * Ignore EBUSY: a real device image already ships those mounts. */
+	mkdir_p("/newroot/run");
+	if (mount("dev", "/newroot/dev", "devtmpfs", 0, "mode=0755") != 0 &&
+	    errno != EBUSY)
+		both_fmt("VXTUX-STEP: devtmpfs /dev failed: %s\n",
+			 strerror(errno));
+	/* Order matters: the devtmpfs mounted above hides any pre-created
+	 * subdirs, so create /dev/pts and /dev/shm inside the NEW /dev. */
+	mkdir_p("/newroot/dev/pts");
+	mkdir_p("/newroot/dev/shm");
+	if (mount("devpts", "/newroot/dev/pts", "devpts", 0,
+		  "mode=0620,ptmxmode=0666") != 0 && errno != EBUSY)
+		both_fmt("VXTUX-STEP: devpts /dev/pts failed: %s\n",
+			 strerror(errno));
+	if (mount("tmpfs", "/newroot/run", "tmpfs", 0, "mode=0755") != 0 &&
+	    errno != EBUSY)
+		both_fmt("VXTUX-STEP: tmpfs /run failed: %s\n",
+			 strerror(errno));
 
 	if (chroot("/newroot") != 0) {
 		both_fmt("VXTUX-STEP: chroot failed: %s\n", strerror(errno));
